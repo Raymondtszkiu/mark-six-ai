@@ -8,27 +8,13 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f7fb; color: #333; margin: 0; padding: 20px; }
         .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
         h1 { text-align: center; color: #1a365d; margin-bottom: 5px; }
-        
-        /* 💡 新增：版本號徽章樣式 */
-        .version-badge {
-            display: inline-block;
-            background-color: #e2e8f0;
-            color: #4a5568;
-            font-size: 11px;
-            font-weight: bold;
-            padding: 3px 8px;
-            border-radius: 20px;
-            vertical-align: middle;
-            margin-left: 8px;
-        }
-
+        .version-badge { display: inline-block; background-color: #e2e8f0; color: #4a5568; font-size: 11px; font-weight: bold; padding: 3px 8px; border-radius: 20px; vertical-align: middle; margin-left: 8px; line-height: 1.2; }
         .meta-info { text-align: center; color: #666; font-size: 14px; margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
         .balls-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-bottom: 40px; }
         .ball-wrapper { text-align: center; }
         .lotto-ball { width: 55px; height: 55px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #ff4d4d, #cc0000); color: white; font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
         .prob-label { font-size: 12px; color: #777; margin-top: 5px; }
         .chart-section { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
-        
         .bar-row { display: flex; align-items: center; margin-bottom: 15px; }
         .bar-label { width: 180px; font-size: 14px; color: #4a5568; font-weight: 500; }
         .bar-track { flex-grow: 1; background-color: #edf2f7; height: 24px; border-radius: 6px; overflow: hidden; position: relative; }
@@ -38,19 +24,16 @@
 </head>
 <body>
 <div class="container">
-    <!-- 💡 核心修改：在標題右側嵌入版本號標籤 -->
+    <!-- 💡 核心修正：確保 HTML 裡面有這一行標籤 -->
     <h1>🗳️ 香港六合彩 AI 預測儀表板<span class="version-badge">v3.0.0</span></h1>
     <div id="meta-info" class="meta-info">正在動態載入 AI 數據包...</div>
-    
     <h3>🔮 AI 評估：下一期開出機率最高的前 6 個號碼</h3>
     <div id="top-balls" class="balls-container"></div>
-    
     <div class="chart-section">
         <h3>💡 隨機森林模型：14維度核心特徵決策依賴權重 (Feature Importances)</h3>
         <div id="native-chart-container"></div>
     </div>
 </div>
-
 <script src="app.js"></script>
 </body>
 </html>
