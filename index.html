@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>香港六合彩 AI 預測儀表板</title>
     
-    <!-- 💡 核心修正：更換為 Chart.js 官方最穩定、無障礙的 CDN 載入網址 -->
-    <script src="https://cloudflare.com" integrity="sha512-YhcY7b7bHUTbS30tQ966UvJ3H9zWpCunwT0mZfM7N9bJdG6vO6SExxWbC89NqM6m4pP0V0Y171yL1N3Y29w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- 💡 終極修正：直接使用官方輕量圖表加載腳本，杜絕 CDN 網絡堵塞問題 -->
+    <script src="https://jsdelivr.net"></script>
     
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f7fb; color: #333; margin: 0; padding: 20px; }
@@ -32,7 +32,6 @@
     <div class="chart-section">
         <h3>💡 隨機森林模型：當前最依賴的開獎特徵權重 (Feature Importances)</h3>
         <div class="chart-container">
-            <!-- 確保 Canvas 畫布正常預留空間 -->
             <canvas id="weightChart"></canvas>
         </div>
     </div>
