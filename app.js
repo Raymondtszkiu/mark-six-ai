@@ -13,6 +13,7 @@ async function loadAILottoDashboard() {
         metaElement.innerHTML = `數據更新時間：${localTime}  •  模型已研讀歷史總期數：${data.total_periods_trained} 期`;
 
         const probArray = Object.entries(data.number_probabilities);
+        // 修正排序邏輯，確保依機率降序排列
         probArray.sort((a, b) => b[1] - a[1]);
         const top6 = probArray.slice(0, 6);
 
