@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>香港六合彩 AI 預測儀表板</title>
+    <title>香港六合彩 AI 預測儀表板 - 最強拼圖版</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f7fb; color: #333; margin: 0; padding: 20px; }
         .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
@@ -17,9 +17,9 @@
         
         /* 輕量級原生圖表樣式 */
         .bar-row { display: flex; align-items: center; margin-bottom: 15px; }
-        .bar-label { width: 140px; font-size: 14px; color: #4a5568; font-weight: 500; }
+        .bar-label { width: 180px; font-size: 14px; color: #4a5568; font-weight: 500; }
         .bar-track { flex-grow: 1; background-color: #edf2f7; height: 24px; border-radius: 6px; overflow: hidden; position: relative; }
-        .bar-fill { background: linear-gradient(90deg, #2b6cb0, #1a365d); height: 100%; width: 0%; border-radius: 6px; transition: width 0.8s ease-out; }
+        .bar-fill { background: linear-gradient(90deg, #3182ce, #1a365d); height: 100%; width: 0%; border-radius: 6px; transition: width 0.8s ease-out; }
         .bar-value { width: 60px; text-align: right; font-size: 14px; font-weight: bold; color: #2d3748; margin-left: 10px; }
     </style>
 </head>
@@ -32,8 +32,7 @@
     <div id="top-balls" class="balls-container"></div>
     
     <div class="chart-section">
-        <h3>💡 隨機森林模型：當前最依賴的開獎特徵權重 (Feature Importances)</h3>
-        <!-- 原生圖表容器，由 JavaScript 動態生成 -->
+        <h3>💡 隨機森林模型：14維度核心特徵決策依賴權重 (Feature Importances)</h3>
         <div id="native-chart-container"></div>
     </div>
 </div>
