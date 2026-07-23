@@ -103,7 +103,7 @@ def main():
     # 💡 核心修正：精準對接 14 維扁平化特徵權重，徹底消滅 0.00% 偏置現象
     importances = model.feature_importances_
     output_data = {
-        "last_updated": str(np.datetime64('now')),
+        "last_updated": str(np.datetime64('now') + np.timedelta64(8, 'h')),
         "total_periods_trained": len(historical_draws),
         "number_probabilities": {str(num): float(prob) for num, prob in zip(range(MIN_NUM, MAX_NUM + 1), probabilities)},
         "feature_importances": {
