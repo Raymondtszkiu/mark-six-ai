@@ -3,21 +3,17 @@ async function loadAILottoDashboard() {
     const ballsContainer = document.getElementById("top-balls");
 
     try {
-        // 讀取本地同目錄下的預測 JSON
         const response = await fetch("./prediction_result.json");
         if (!response.ok) throw new Error("找不到預測數據檔案，請確認後端自動排程是否已運行成功。");
         const data = await response.json();
 
-        // 轉換並更新時間
         const localTime = new Date(data.last_updated).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" });
         metaElement.innerHTML = `數據更新時間：${localTime}  •  模型已研讀歷史總期數：${data.total_periods_trained} 期`;
 
-        // 排序 49 個號碼的機率並找出前 6 高
         const probArray = Object.entries(data.number_probabilities);
-        probArray.sort((a, b) => b[1] - a[1]); // 確保正確的數值降序排列
+        probArray.sort((a, b) => b[1] - a[1]); // 精準降序排列
         const top6 = probArray.slice(0, 6);
 
-        // 渲染號碼球
         ballsContainer.innerHTML = "";
         top6.forEach(([num, prob]) => {
             const percentage = (prob * 100).toFixed(2);
@@ -30,7 +26,6 @@ async function loadAILottoDashboard() {
             ballsContainer.insertAdjacentHTML("beforeend", ballHTML);
         });
 
-        // 呼叫原生圖表渲染，直接避開 Chart.js
         renderNativeChart(data.feature_importances);
 
     } catch (error) {
@@ -39,30 +34,26 @@ async function loadAILottoDashboard() {
     }
 }
 
-/**
- * 使用原生 HTML/CSS 渲染極速長條圖
- */
 function renderNativeChart(importances) {
     const container = document.getElementById("native-chart-container");
-    container.innerHTML = ""; // 清空
+    container.innerHTML = ""; 
 
-    // 設定特徵對應名與其權重數據
+    // 計算總權重以進行百分比歸一化顯示
+    const total = importances.missed_periods + importances.hot_cold_10 + importances.recent_tracks + importances.odd_even_split + importances.color_bands_trend;
+
     const features = [
-        { label: "歷史遺漏期數", value: importances.missed_periods * 100 },
-        { label: "近10期冷熱度", value: importances.hot_cold_10 * 100 },
-        { label: "前1期開出(t-1)", value: importances.t_1 * 100 },
-        { label: "前2期開出(t-2)", value: importances.t_2 * 100 },
-        { label: "前3期開出(t-3)", value: importances.t_3 * 100 },
-        { label: "前4期開出(t-4)", value: importances.t_4 * 100 },
-        { label: "前5期開出(t-5)", value: importances.t_5 * 100 }
+        { label: "歷史遺漏期數 (微觀)", value: (importances.missed_periods / total) * 100 },
+        { label: "近 10 期冷熱度 (微觀)", value: (importances.hot_cold_10 / total) * 100 },
+        { label: "近期開出軌跡 (微觀)", value: (importances.recent_tracks / total) * 100 },
+        { label: "⚖️ 奇偶比例限制 (宏觀)", value: (importances.odd_even_split / total) * 100 },
+        { label: "🎨 三門波段走勢 (宏觀)", value: (importances.color_bands_trend / total) * 100 }
     ];
 
-    // 動態生成帶有過渡動畫的長條圖
     features.forEach(f => {
         const valPercent = f.value.toFixed(2);
         const rowHTML = `
             <div class="bar-row">
-                <div class="bar-label">${f.label}</div>
+                <div class="bar-label" style="width: 170px;">${f.label}</div>
                 <div class="bar-track">
                     <div class="bar-fill" style="width: ${valPercent}%;"></div>
                 </div>
@@ -73,5 +64,4 @@ function renderNativeChart(importances) {
     });
 }
 
-// 網頁載入完成後自動執行
 document.addEventListener("DOMContentLoaded", loadAILottoDashboard);
