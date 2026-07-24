@@ -19,14 +19,16 @@ async function loadAILottoDashboard() {
     let realWeights = {};
     for (let i = 1; i <= 49; i++) {
       let rawProb = rawJsonData.number_probabilities[String(i)] || (6 / 49); 
-      if (i <= 31) rawProb *= 0.82; 
-      else rawProb *= 1.18; 
+      
+      if (i <= 31) rawProb *= 0.85; 
+      else rawProb *= 1.15; 
 
-      // 💡 修正：補上 [0] 取得 Uint32 數值，防止產出 NaN
+      // 💡 修正：補上 [0] 索引以正常取得亂數值，避免產出 NaN
       let cryptoNoise = (window.crypto.getRandomValues(new Uint32Array(1))[0] / 0xFFFFFFFF);
       realWeights[String(i)] = rawProb * (0.85 + cryptoNoise * 0.3); 
     }
 
+    // 💡 修正：針對鍵值對 [num, weight] 進行第二項 (weight) 降序排序
     globalAllSorted = Object.entries(realWeights);
     globalAllSorted.sort((a, b) => b[1] - a[1]); 
 
@@ -35,8 +37,8 @@ async function loadAILottoDashboard() {
       globalWeightsObj[num] = (prob * 100).toFixed(1);
     });
 
-    const bigOnlyArray = globalAllSorted.filter(([num, prob]) => parseInt(num) > 31);
-    aiTop7 = bigOnlyArray.slice(0, 7).map(([num]) => num);
+    // 從 1-49 全體號碼中取最強的前 7 名
+    aiTop7 = globalAllSorted.slice(0, 7).map(([num]) => num);
 
     renderDashboardUI();
 
@@ -57,23 +59,23 @@ function renderDashboardUI() {
   ballsContainer.innerHTML = "";
   allBallsContainer.innerHTML = "";
 
-  // 1. 🤖 PART 1：AI 固定精選列
+  // 1. 🤖 PART 1：AI 固定精選列 (全體 1-49 號海選)
   aiTop7.forEach((num) => {
     const ballColor = getBallColorHex(num, false);
     const formattedNum = String(num).padStart(2, '0');
     const weightVal = globalWeightsObj[num] || "12.2"; 
 
     const ballHTML = `
-      <div class="ball-wrapper" title="AI 精選高回報大號碼">
+      <div class="ball-wrapper" title="AI 精選黃金組合號碼">
         <div class="lotto-ball" style="background: ${ballColor};">${formattedNum}</div>
         <div class="prob-label" style="font-size: 11px; font-weight: bold; margin-top: 4px; color: #1a365d;">回報: ${weightVal}</div>
       </div>`;
     ballsContainer.insertAdjacentHTML("beforeend", ballHTML);
   });
 
-  // 2. 🛒 PART 2：User 自選看板
+  // 2. 🛒 PART 3：User 自選看板
   if (userSelected.length === 0) {
-    userBallsContainer.innerHTML = `<span id="user-hint" style="color: #a0aec0; font-size: 14px; font-weight: 500;">💡 未選號碼，請喺下面 49 碼大盤點擊號碼球，即可即時組裝你機率攻守兼備嘅打和防線！</span>`;
+    userBallsContainer.innerHTML = `<span id="user-hint" style="color: #a0aec0; font-size: 14px; font-weight: 500;">💡 未選號碼，請喺上面 PART 2 大盤點擊號碼球，即可在此處即時組裝你嘅心水打和防線！</span>`;
     if (statsPanel) statsPanel.style.display = "none";
   } else {
     userBallsContainer.innerHTML = "";
@@ -88,7 +90,7 @@ function renderDashboardUI() {
       let recentTrackStatus = hotCold10 > 2 ? "🔺 升" : "🔸 穩"; 
 
       const ballHTML = `
-        <div class="ball-wrapper" style="cursor: pointer; padding: 8px; border-radius: 10px; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.04); text-align: center; min-width: 65px;" onclick="toggleBallSelection('${num}')">
+        <div class="ball-wrapper" style="cursor: pointer; padding: 8px; border-radius: 10px; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.04); text-align: center; min-width: 65px;" onclick="toggleBallSelection('${num}')" title="點擊將呢個字移出自選組合">
           <div class="lotto-ball" style="background: ${ballColor}; margin: 0 auto;">${formattedNum}</div>
           <div class="prob-label" style="font-size: 11px; font-weight: bold; margin-top: 5px; color: #1a365d; line-height: 1.4;">
             <div>🏆 回報: ${weightVal}</div>
@@ -100,7 +102,6 @@ function renderDashboardUI() {
       userBallsContainer.insertAdjacentHTML("beforeend", ballHTML);
     });
 
-    // 📊 自選 7 字評級精算
     if (userSelected.length === 7 && statsPanel) {
       statsPanel.style.display = "block";
       document.getElementById("stat-jackpot").innerHTML = '1 / 1,997,688 (比單式飆升 7 倍)';
@@ -111,7 +112,7 @@ function renderDashboardUI() {
       userSelected.forEach(num => {
         const cleanNum = parseInt(String(num).trim());
         totalScoreSum += parseFloat(globalWeightsObj[num] || 12.2);
-        if (cleanNum <= 31) birthdayClashCount++;
+        if (cleanNum <= 31) birthdayClashCount++; 
       });
       
       const avgWeight = totalScoreSum / 7;
@@ -135,10 +136,11 @@ function renderDashboardUI() {
 
   let displayArray = [...globalAllSorted];
   if (currentSortMode === "number") {
-    // 💡 修正：明確提取 Tuple 第一個元素 (號碼字串) 轉整數排序
+    // 💡 修正：針對鍵值對 [num, weight] 的第一項 (num) 轉整數排序
     displayArray.sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
   }
 
+  // 3. 📊 PART 2：大盤網格
   displayArray.forEach(([num, prob]) => {
     const ballColor = getBallColorHex(num, true);
     const formattedNum = String(num).padStart(2, '0');
@@ -177,7 +179,7 @@ function changeDisplayOrder(mode) {
     btnWeight.style.backgroundColor = "#3182ce"; btnWeight.style.color = "white"; btnWeight.style.border = "1px solid #3182ce";
     btnNumber.style.backgroundColor = "white"; btnNumber.style.color = "#4a5568"; btnNumber.style.border = "1px solid #cbd5e1";
   } else {
-    btnNumber.style.backgroundColor = "#3182ce"; btnNumber.style.color = "white"; btnNumber.style.border = "1px solid #3182ce";
+    btnNumber.style.backgroundColor = "#3182ce"; btnNumber.style.color = "white"; btnNumber.style.border = "1px solid #cbd5e1";
     btnWeight.style.backgroundColor = "white"; btnWeight.style.color = "#4a5568"; btnWeight.style.border = "1px solid #cbd5e1";
   }
   renderDashboardUI(); 
@@ -197,7 +199,7 @@ function toggleBallSelection(num) {
   renderDashboardUI(); 
 }
 
-// 💡 完整保留分流與漸層輸出的 getBallColorHex 函數
+// 💡 修正：剔除非程式碼字串，恢復完整的波色判斷邏輯
 function getBallColorHex(num, isDark) {
   const n = parseInt(num);
   let colorModeNum = 3; 
@@ -228,5 +230,4 @@ function getBallColorHex(num, isDark) {
   }
 }
 
-// 🚀 頁面初始化監聽
 document.addEventListener("DOMContentLoaded", loadAILottoDashboard);
