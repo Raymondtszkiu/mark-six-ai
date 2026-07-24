@@ -6,6 +6,7 @@ let aiAllTop7 = [];
 let userSelected = []; 
 let currentSortMode = "weight";
 
+// 載入預設固定數據模型
 async function loadAILottoDashboard() { 
     const metaElement = document.getElementById("meta-info"); 
     try { 
@@ -26,6 +27,7 @@ async function loadAILottoDashboard() {
             realWeights[String(i)] = rawProb; 
         } 
         processWeightsAndRender(realWeights); 
+        updateEngineUI("fixed"); 
     } catch (error) { 
         console.error("前端載入失敗:", error); 
         if (metaElement) { 
@@ -34,6 +36,7 @@ async function loadAILottoDashboard() {
     } 
 }
 
+// 手動注入量子噪訊抽樣
 function rerollWithNoise() { 
     if (!rawJsonData) return; 
     const metaElement = document.getElementById("meta-info"); 
@@ -50,8 +53,39 @@ function rerollWithNoise() {
         realWeights[String(i)] = rawProb * (0.85 + cryptoNoise * 0.3); 
     } 
     processWeightsAndRender(realWeights); 
+    updateEngineUI("noise"); 
 }
 
+// 更新引擎按鈕高亮樣式
+function updateEngineUI(mode) {
+    const btnReroll = document.getElementById("btn-reroll");
+    const btnFixed = document.getElementById("btn-reset-fixed");
+    if (!btnReroll || !btnFixed) return;
+
+    if (mode === "fixed") {
+        btnFixed.style.backgroundColor = "#ffffff";
+        btnFixed.style.color = "#3182ce";
+        btnFixed.style.border = "2px solid #3182ce";
+        btnFixed.style.fontWeight = "bold";
+
+        btnReroll.style.backgroundColor = "#805ad5";
+        btnReroll.style.color = "#ffffff";
+        btnReroll.style.border = "none";
+        btnReroll.style.fontWeight = "normal";
+    } else {
+        btnReroll.style.backgroundColor = "#805ad5";
+        btnReroll.style.color = "#ffffff";
+        btnReroll.style.border = "2px solid #553c9a";
+        btnReroll.style.fontWeight = "bold";
+
+        btnFixed.style.backgroundColor = "#f7fafc";
+        btnFixed.style.color = "#4a5568";
+        btnFixed.style.border = "1px solid #cbd5e1";
+        btnFixed.style.fontWeight = "normal";
+    }
+}
+
+// 計算排序並觸發 UI 渲染
 function processWeightsAndRender(realWeights) { 
     globalAllSorted = Object.entries(realWeights); 
     globalAllSorted.sort((a, b) => b[1] - a[1]); 
@@ -65,6 +99,7 @@ function processWeightsAndRender(realWeights) {
     renderDashboardUI(); 
 }
 
+// 儀表板 UI 渲染函式
 function renderDashboardUI() { 
     const ballsContainer = document.getElementById("top-balls"); 
     const allLottoBallsContainer = document.getElementById("all-lotto-balls"); 
@@ -161,7 +196,7 @@ function renderDashboardUI() {
         displayArray.sort((a, b) => parseInt(a[0]) - parseInt(b[0])); 
     } 
 
-    // PART 4：渲染下方的 49 碼全數字冷熱即時大盤
+    // PART 4：渲染 49 碼全數字即時大盤
     displayArray.forEach(([num, prob]) => { 
         const ballColor = getBallColorHex(num, true); 
         const formattedNum = String(num).padStart(2, '0'); 
@@ -170,13 +205,11 @@ function renderDashboardUI() {
         const isAiAllRec = aiAllTop7.includes(num); 
         const weightVal = globalWeightsObj[num] || "12.2"; 
 
-        // 1. 讀取 Python 生成的真實滾動數據
         const rollingData = (rawJsonData && rawJsonData.rolling_features && rawJsonData.rolling_features[num]) || {};
         const r10Pct = rollingData.r10 !== undefined ? (rollingData.r10 * 100).toFixed(0) : "0";
         const r30Pct = rollingData.r30 !== undefined ? (rollingData.r30 * 100).toFixed(0) : "0";
         const momentum = rollingData.momentum !== undefined ? rollingData.momentum : 1.0;
 
-        // 2. 依據動量比值 M 判定狀態
         let recentTrackStatus = "🔸 穩";
         if (momentum >= 1.5) recentTrackStatus = "🔥 爆發變盤";
         else if (momentum < 0.6) recentTrackStatus = "🔹 轉冷衰退";
@@ -196,8 +229,7 @@ function renderDashboardUI() {
         cardElement.style.background = isUserSelected ? "#ebf8ff" : "#fff";
         cardElement.style.transition = "all 0.2s";
 
-        // 3. 設定黑底 Tooltip 與卡片內數據
-        cardElement.setAttribute('data-info', `🔮 號碼 ${formattedNum} 滾動動量分析\n⚖️ 回報率：${weightVal}x\n🔥 近10期熱度：${r10Pct}%\n📊 近30期基線：${r30Pct}%\n📈 走勢預測：${recentTrackStatus} (M:${momentum})`);
+        cardElement.setAttribute('data-info', `🔮 號碼 ${formattedNum} 滾動動態分析\n⚖️ 回報率：${weightVal}x\n🔥 近10期熱度：${r10Pct}%\n📊 近30期基線：${r30Pct}%\n📈 走勢預測：${recentTrackStatus} (M:${momentum})`);
 
         cardElement.innerHTML = `
             <div class="lotto-ball" style="width: 40px; height: 40px; font-size: 15px; margin: 0 auto; background: ${ballColor}; opacity: ${isUserSelected || isAiBigRec || isAiAllRec ? '1' : '0.85'}; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">${formattedNum}</div>
@@ -215,8 +247,9 @@ function renderDashboardUI() {
 
         allBallsContainer.appendChild(cardElement);
     });
-} // 🚀 補回此處漏掉的關閉括號
+}
 
+// 切換排序方式
 function changeDisplayOrder(mode) {
     currentSortMode = mode;
     const btnWeight = document.getElementById("btn-sort-weight");
@@ -234,6 +267,7 @@ function changeDisplayOrder(mode) {
     renderDashboardUI(); 
 }
 
+// 點擊選擇/取消號碼球
 function toggleBallSelection(num) {
     if (userSelected.includes(num)) {
         userSelected = userSelected.filter(b => b !== num);
@@ -248,6 +282,7 @@ function toggleBallSelection(num) {
     renderDashboardUI();
 }
 
+// 計算波色背景顏色
 function getBallColorHex(num, isDark) {
     const n = parseInt(num);
     let colorModeNum = 3;
