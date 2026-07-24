@@ -92,15 +92,20 @@
             z-index: 999999;
         }
 
-        /* ---------------------------------------------------
-           🟢 【共通設定：上半場 (1~24號波) 一律向下彈】
-           --------------------------------------------------- */
-        #all-49-balls > div:nth-child(-n+24):hover::after {
+        /* 🤖 提示框本體：上下左右完全由 var(--變數) 動態現場指揮 */
+        #all-49-balls > div:hover::after {
             content: attr(data-info);
             position: absolute;
-            top: 115%; /* 固定向下彈 */
-            left: 50%;
-            transform: translateX(-50%);
+            
+            /* 💡 上下位置動態控制 */
+            top: var(--tooltip-top, auto);
+            bottom: var(--tooltip-bottom, 115%); 
+            
+            /* 💡 左右位置動態控制 */
+            left: var(--tooltip-left, 50%);
+            right: var(--tooltip-right, auto);
+            transform: var(--tooltip-transform, translateX(-50%));
+            
             background-color: rgba(20, 24, 33, 0.98);
             color: #ffffff;
             padding: 12px 16px;
@@ -115,81 +120,26 @@
             pointer-events: none;
             width: max-content;
         }
-        /* 上半場通用小箭頭 */
-        #all-49-balls > div:nth-child(-n+24):hover::before {
+
+        /* 🤖 小箭頭本體：方向與位置同樣由 var(--變數) 現場對位 */
+        #all-49-balls > div:hover::before {
             content: "";
             position: absolute;
-            top: 103%;
-            left: 50%;
-            transform: translateX(-50%);
+            
+            /* 💡 上下與顏色（方向）動態控制 */
+            top: var(--arrow-top, auto);
+            bottom: var(--arrow-bottom, 103%);
+            border-color: var(--arrow-color, rgba(20, 24, 33, 0.98) transparent transparent transparent);
+            
+            /* 💡 左右位置動態控制 */
+            left: var(--arrow-left, 50%);
+            right: var(--arrow-right, auto);
+            transform: var(--arrow-transform, translateX(-50%));
+            
             border-width: 7px;
             border-style: solid;
-            border-color: transparent transparent rgba(20, 24, 33, 0.98) transparent;
             z-index: 9999999;
             pointer-events: none;
-        }
-
-        /* ---------------------------------------------------
-           🔵 【共通設定：下半場 (25~49號波) 一律向上彈】
-           --------------------------------------------------- */
-        #all-49-balls > div:nth-child(n+25):hover::after {
-            content: attr(data-info);
-            position: absolute;
-            bottom: 115%; /* 固定向上彈 */
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(20, 24, 33, 0.98);
-            color: #ffffff;
-            padding: 12px 16px;
-            font-size: 12px;
-            font-weight: 500;
-            line-height: 1.6;
-            border-radius: 10px;
-            white-space: pre-line;
-            text-align: left;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            z-index: 9999999;
-            pointer-events: none;
-            width: max-content;
-        }
-        /* 下半場通用小箭頭 */
-        #all-49-balls > div:nth-child(n+25):hover::before {
-            content: "";
-            position: absolute;
-            bottom: 103%;
-            left: 50%;
-            transform: translateX(-50%);
-            border-width: 7px;
-            border-style: solid;
-            border-color: rgba(20, 24, 33, 0.98) transparent transparent transparent;
-            z-index: 9999999;
-            pointer-events: none;
-        }
-
-        /* =======================================================
-           🚀 【智能微調：左右兩側「防撞牆」大修正】
-           ======================================================= */
-
-        /* ⬅️ 1. 控制每排「最左邊」的號碼球 (第 1, 9, 17, 25, 33, 41 粒波) */
-        #all-49-balls > div:nth-child(8n+1):hover::after {
-            left: 0 !important;
-            transform: translateX(0) !important; /* 消除居中偏移，讓提示框整齊往右排開 */
-        }
-        #all-49-balls > div:nth-child(8n+1):hover::before {
-            left: 20px !important;
-            transform: translateX(0) !important; /* 小箭頭貼心地移到左側對準球體 */
-        }
-
-        /* ➡️ 2. 控制每排「最右邊」的號碼球 (第 8, 16, 24, 32, 40, 48 粒波) */
-        #all-49-balls > div:nth-child(8n):hover::after {
-            left: auto !important;
-            right: 0 !important;
-            transform: translateX(0) !important; /* 消除居中偏移，讓提示框整齊往左排開 */
-        }
-        #all-49-balls > div:nth-child(8n):hover::before {
-            left: auto !important;
-            right: 20px !important;
-            transform: translateX(0) !important; /* 小箭頭貼心地移到右側對準球體 */
         }
     </style>
 </head>
