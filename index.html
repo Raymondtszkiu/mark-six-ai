@@ -94,11 +94,7 @@
 
         /* 2. 當滑鼠懸停（Hover）時，自動浮現黑底白字嘅精美資訊方塊 */
         #all-49-balls > div:hover::after {
-            /* 自動嘗試讀取 app.js 附帶在元素身上的 data-info，若無則顯示萬能後備文字 */
-            content: attr(data-info);
-            
-            /* 萬能後備機制：如果 data-info 為空，會自動採用以下預設提示 */
-            content: attr(data-info, "📊 號碼精密數據大盤\n💡 點擊可加入自選列調配");
+            content: "📊 號碼精密數據大盤\n💡 點擊可加入自選列調配";
             
             /* 提示框外觀樣式設計 */
             position: absolute;
@@ -117,6 +113,9 @@
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
             z-index: 9999;
             pointer-events: none; /* 防止滑鼠卡到提示框 */
+            
+            /* 💡 【加入這一行】強制讓提示框寬度自動適應文字長度，不再變成長條狀 */
+            width: max-content; 
         }
 
         /* 3. 為浮空提示框補上一個精緻的向下小箭頭 */
