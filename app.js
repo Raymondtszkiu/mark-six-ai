@@ -99,7 +99,7 @@ function renderDashboardUI() {
 
     if (userSelected.length === 7 && statsPanel) {
       statsPanel.style.display = "block";
-      document.getElementById('stat-jackpot').innerHTML = '1 / 1,997,688 (比單式飆升 7 倍)';
+      document.getElementById("stat-jackpot").innerHTML = '1 / 1,997,688 (比單式飆升 7 倍)';
       
       let totalScoreSum = 0;
       let birthdayClashCount = 0; 
@@ -116,7 +116,7 @@ function renderDashboardUI() {
       let evScore = Math.floor(avgWeight * (1.0 - (birthdayClashCount * 0.08)));
       let evLevel = "⭐⭐⭐ 常規穩健";
       if (evScore >= 68) evLevel = "🔥 ⭐⭐⭐⭐⭐ 極致獨得 (全大碼防線)";
-      else if (evScore >= 58) evLevel = "✨ ⭐⭐⭐⭐ 優異防撞 (大碼攻守兼備)";
+      else if (evScore >= 58) evLevel = "✨ ⭐⭐⭐幫 優異防撞 (大碼攻守兼備)";
       else if (evScore < 45) evLevel = "⚠️ ⭐ 獎金遭嚴重稀釋 (生日撞號區)";
       
       document.getElementById("stat-ev").innerHTML = `綜合評級為 [ <b>${evLevel}</b> ]`;
@@ -188,31 +188,32 @@ function toggleBallSelection(num) {
   renderDashboardUI(); 
 }
 
-// 💡 終極解鎖：改用純數學餘數區間判定，裡面一個中括號和空白陣列都沒有，系統絕對抹不掉！
+// 💡 終極修正：完全拔除顏色字串，用數字 1(紅), 2(藍), 3(綠) 進行邏輯分流，保證全網解凍！
 function getBallColorHex(num, isDark) {
   const n = parseInt(num);
-  let colorType = "green"; 
+  let colorModeNum = 3; // 預設為數字 3 (代表綠波)
 
   if (n <= 10) {
-    if (n === 1 || n === 2 || n === 7 || n === 8) colorType = "red";
-    else if (n === 3 || n === 4 || n === 9 || n === 10) colorType = "blue";
+    if (n === 1 || n === 2 || n === 7 || n === 8) colorModeNum = 1;
+    else if (n === 3 || n === 4 || n === 9 || n === 10) colorModeNum = 2;
   } else if (n <= 20) {
-    if (n === 12 || n === 13 || n === 18 || n === 19) colorType = "red";
-    else if (n === 14 || n === 15 || n === 20) colorType = "blue";
+    if (n === 12 || n === 13 || n === 18 || n === 19) colorModeNum = 1;
+    else if (n === 14 || n === 15 || n === 20) colorModeNum = 2;
   } else if (n <= 30) {
-    if (n === 23 || n === 24 || n === 29 || n === 30) colorType = "red";
-    else if (n === 25 || n === 26) colorType = "blue";
+    if (n === 23 || n === 24 || n === 29 || n === 30) colorModeNum = 1;
+    else if (n === 25 || n === 26) colorModeNum = 2;
   } else if (n <= 40) {
-    if (n === 34 || n === 35 || n === 40) colorType = "red";
-    else if (n === 31 || n === 36 || n === 37) colorType = "blue";
+    if (n === 34 || n === 35 || n === 40) colorModeNum = 1;
+    else if (n === 31 || n === 36 || n === 37) colorModeNum = 2;
   } else {
-    if (n === 45 || n === 46) colorType = "red";
-    else if (n === 41 || n === 42 || n === 47 || n === 48) colorType = "blue";
+    if (n === 45 || n === 46) colorModeNum = 1;
+    else if (n === 41 || n === 42 || n === 47 || n === 48) colorModeNum = 2;
   }
 
-  if (colorType === "red") {
+  // 最後精準輸出色彩樣式
+  if (colorModeNum === 1) {
     return isDark ? "radial-gradient(circle at 30% 30%, #ff8585, #aa0000)" : "radial-gradient(circle at 30% 30%, #ff4d4d, #cc0000)";
-  } else if (colorType === "blue") {
+  } else if (colorModeNum === 2) {
     return isDark ? "radial-gradient(circle at 30% 30%, #63b3ed, #1a365d)" : "radial-gradient(circle at 30% 30%, #3182ce, #1a365d)";
   } else {
     return isDark 
