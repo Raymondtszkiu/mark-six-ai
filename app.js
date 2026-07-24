@@ -1,4 +1,5 @@
-let globalAllSorted = [];
+let globalAllSorted = []; // 儲存排序後的陣列 [ [號碼, 權重], ... ]
+let globalWeightsObj = {}; // ✨ 終極武器：直接用物件儲存 { "32": 78, "01": 63 }，永遠唔會讀錯 NaN！
 let aiTop7 = [];        
 let userSelected = [];   
 let rawJsonData = null; 
@@ -15,6 +16,7 @@ async function loadAILottoDashboard() {
     const localTime = new Date(rawJsonData.last_updated).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" });
     metaElement.innerHTML = `數據更新時間：${localTime} • ⚖️ 混合決策引擎：AI 期望值最大化模型 (量子隨機降噪 + 撞號防禦機制)`;
 
+    // 計算權重
     let realWeights = {};
     for (let i = 1; i <= 49; i++) {
       let rawProb = rawJsonData.number_probabilities[String(i)] || (6 / 49); 
@@ -22,12 +24,20 @@ async function loadAILottoDashboard() {
       else rawProb *= 1.18; 
 
       let cryptoNoise = (window.crypto.getRandomValues(new Uint32Array(1)) / 0xFFFFFFFF);
-      realWeights[i] = rawProb * (0.85 + cryptoNoise * 0.3); 
+      realWeights[String(i)] = rawProb * (0.85 + cryptoNoise * 0.3); 
     }
 
+    // 轉成陣列做排序
     globalAllSorted = Object.entries(realWeights);
-    globalAllSorted.sort((a, b) => b - a); 
+    globalAllSorted.sort((a, b) => b[1] - a[1]); // 精準數值降序
 
+    // ✨ 建立終極直讀 Dictionary，把每個號碼算好的整數權重直接存入去
+    globalWeightsObj = {};
+    globalAllSorted.forEach(([num, prob]) => {
+      globalWeightsObj[num] = (prob * 100).toFixed(0);
+    });
+
+    // 🌟 嚴格篩選「大過 31」且排序最高的前 7 名黃金大號
     const bigOnlyArray = globalAllSorted.filter(([num, prob]) => parseInt(num) > 31);
     aiTop7 = bigOnlyArray.slice(0, 7).map(([num]) => num);
 
@@ -49,12 +59,11 @@ function renderDashboardUI() {
   ballsContainer.innerHTML = "";
   allBallsContainer.innerHTML = "";
 
-  // 1. 🤖 PART 1：AI 固定精選列（使用港式字眼：獨得回報）
+  // 1. 🤖 PART 1：AI 固定精選列（直接讀物件，百分之百無 NaN 盲點！）
   aiTop7.forEach((num) => {
     const ballColor = getBallColorHex(num, false);
     const formattedNum = String(num).padStart(2, '0');
-    const targetItem = globalAllSorted.find(([bNum]) => bNum === num);
-    const weightVal = targetItem ? (targetItem * 100).toFixed(0) : "0";
+    const weightVal = globalWeightsObj[num] || "0"; // ⚡ 秒速直讀
 
     const ballHTML = `
       <div class="ball-wrapper" title="AI 精選高回報大號碼">
@@ -64,7 +73,7 @@ function renderDashboardUI() {
     ballsContainer.insertAdjacentHTML("beforeend", ballHTML);
   });
 
-  // 2. 🛒 PART 2：User 自選看板（全港式字眼：回報、盲門、旺弱、走勢）
+  // 2. 🛒 PART 2：User 自選看板（同樣直讀物件，絕不爆錯）
   if (userSelected.length === 0) {
     userBallsContainer.innerHTML = `<span id="user-hint" style="color: #a0aec0; font-size: 14px; font-weight: 500;">💡 未選號碼，請喺下面 49 碼大盤點擊號碼球，即可即時組裝你嘅心水打和防線組合！</span>`;
   } else {
@@ -72,8 +81,7 @@ function renderDashboardUI() {
     userSelected.forEach((num) => {
       const ballColor = getBallColorHex(num, false);
       const formattedNum = String(num).padStart(2, '0');
-      const targetItem = globalAllSorted.find(([bNum]) => bNum === num);
-      const weightVal = targetItem ? (targetItem * 100).toFixed(0) : "0";
+      const weightVal = globalWeightsObj[num] || "0"; // ⚡ 秒速直讀
 
       let rawScore = rawJsonData && rawJsonData.number_probabilities[num] ? rawJsonData.number_probabilities[num] : 0.05;
       let missedPeriods = Math.floor((1 - rawScore) * 15) + (parseInt(num) % 4); 
@@ -94,13 +102,13 @@ function renderDashboardUI() {
     });
   }
 
-  // 大盤網格分流控制
+  // 大盤網格排序控制
   let displayArray = [...globalAllSorted];
   if (currentSortMode === "number") {
-    displayArray.sort((a, b) => parseInt(a) - parseInt(b));
+    displayArray.sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
   }
 
-  // 3. 📊 PART 3：49 碼大盤（✨ 完美升級：直接喺 UI 顯示盲門期數同旺弱次數！）
+  // 3. 📊 PART 3：49 碼大盤
   displayArray.forEach(([num, prob]) => {
     const ballColor = getBallColorHex(num, true);
     const formattedNum = String(num).padStart(2, '0');
@@ -114,6 +122,7 @@ function renderDashboardUI() {
     let recentTrackStatus = hotCold10 > 2 ? "開出頻率飆升中" : "常態常規流暢波動"; 
 
     const trueRank = globalAllSorted.findIndex(([bNum]) => bNum === num) + 1;
+    const weightVal = globalWeightsObj[num] || "0";
 
     let microStatsText = `號碼: ${formattedNum} 號\n`;
     microStatsText += `-------------------------\n`;
@@ -124,7 +133,6 @@ function renderDashboardUI() {
     microStatsText += `-------------------------\n`;
     microStatsText += isUserSelected ? `✅ 狀態：你已經揀咗呢個字` : `🖱️ 提示：點擊呢個波可以加入自選防線！`;
 
-    // 💡 關鍵優化：在大盤球下方，直接同時顯示 回報、盲門、旺弱，一目了然！
     const ballHTML = `
       <div class="ball-wrapper" 
            style="padding: 6px; border-radius: 8px; background: ${isUserSelected ? '#ebf8ff' : 'transparent'}; border: ${isUserSelected ? '1px solid #3182ce' : (isAiRecommended ? '1px dashed #3182ce' : 'none')}; cursor: pointer; text-align: center; min-width: 60px;" 
@@ -132,7 +140,7 @@ function renderDashboardUI() {
            title="${microStatsText}">
         <div class="lotto-ball" style="width: 40px; height: 40px; font-size: 15px; margin: 0 auto; background: ${ballColor}; opacity: ${isUserSelected || isAiRecommended ? '1' : '0.75'}; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">${formattedNum}</div>
         <div class="prob-label" style="font-size: 10px; font-weight: bold; margin-top: 4px; color: ${isUserSelected ? '#3182ce' : '#4a5568'}; line-height: 1.3;">
-          <div>${isUserSelected ? '★ 已揀' : (isAiRecommended ? '🤖 精選' : '回報:' + (prob * 100).toFixed(0))}</div>
+          <div>${isUserSelected ? '★ 已揀' : (isAiRecommended ? '🤖 精選' : '回報:' + weightVal)}</div>
           <div style="color: #64748b; font-weight: normal; font-size: 9px;">⏱️漏:${missedPeriods}</div>
           <div style="color: #e53e3e; font-weight: normal; font-size: 9px;">🔥熱:${hotCold10}</div>
         </div>
