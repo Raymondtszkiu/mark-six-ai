@@ -10,7 +10,7 @@ async function loadAILottoDashboard() {
 
   try {
     const response = await fetch("./prediction_result.json");
-    if (!response.ok) throw new Error("找不到預測數據檔案。");
+    if (!response.ok) throw new Error("找不到預測數據檔案 (prediction_result.json)");
     rawJsonData = await response.json(); 
     
     const localTime = new Date(rawJsonData.last_updated).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" });
@@ -41,7 +41,7 @@ async function loadAILottoDashboard() {
 
   } catch (error) {
     console.error("前端載入失敗:", error);
-    metaElement.innerHTML = `<span style="color:red;">⚠️ 載入失敗: ${error.message}</span>`;
+    metaElement.innerHTML = `<span style="color:red;">⚠️ 載入失敗: ${error.message}（請確認 GitHub 根目錄是否有 prediction_result.json）</span>`;
   }
 }
 
@@ -116,7 +116,7 @@ function renderDashboardUI() {
       let evScore = Math.floor(avgWeight * (1.0 - (birthdayClashCount * 0.08)));
       let evLevel = "⭐⭐⭐ 常規穩健";
       if (evScore >= 68) evLevel = "🔥 ⭐⭐⭐⭐⭐ 極致獨得 (全大碼防線)";
-      else if (evScore >= 58) evLevel = "✨ ⭐⭐⭐幫 優異防撞 (大碼攻守兼備)";
+      else if (evScore >= 58) evLevel = "✨ ⭐⭐⭐⭐ 優異防撞 (大碼攻守兼備)";
       else if (evScore < 45) evLevel = "⚠️ ⭐ 獎金遭嚴重稀釋 (生日撞號區)";
       
       document.getElementById("stat-ev").innerHTML = `綜合評級為 [ <b>${evLevel}</b> ]`;
@@ -188,10 +188,9 @@ function toggleBallSelection(num) {
   renderDashboardUI(); 
 }
 
-// 💡 終極修正：完全拔除顏色字串，用數字 1(紅), 2(藍), 3(綠) 進行邏輯分流，保證全網解凍！
 function getBallColorHex(num, isDark) {
   const n = parseInt(num);
-  let colorModeNum = 3; // 預設為數字 3 (代表綠波)
+  let colorModeNum = 3; 
 
   if (n <= 10) {
     if (n === 1 || n === 2 || n === 7 || n === 8) colorModeNum = 1;
@@ -210,7 +209,6 @@ function getBallColorHex(num, isDark) {
     else if (n === 41 || n === 42 || n === 47 || n === 48) colorModeNum = 2;
   }
 
-  // 最後精準輸出色彩樣式
   if (colorModeNum === 1) {
     return isDark ? "radial-gradient(circle at 30% 30%, #ff8585, #aa0000)" : "radial-gradient(circle at 30% 30%, #ff4d4d, #cc0000)";
   } else if (colorModeNum === 2) {
@@ -222,7 +220,4 @@ function getBallColorHex(num, isDark) {
   }
 }
 
-// 🚀 全局核心異步啟動點
 document.addEventListener("DOMContentLoaded", loadAILottoDashboard);
-    return isDark ? "radial-gradient(circle at 30% 30%, #ff8585, #aa0000)" : "radial-gradient(circle at 30% 30%, #ff4d4d, #cc0000)";
-  } else if (colorType === "blue") {
