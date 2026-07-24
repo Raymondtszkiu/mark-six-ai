@@ -1,7 +1,6 @@
-// 全域變數儲存狀態
 let globalAllSorted = [];
-let aiTop7 = [];        // 🤖 儲存 AI 固定的 7 個號碼
-let userSelected = [];   // 🛒 儲存使用者自己挑選的號碼
+let aiTop7 = [];        
+let userSelected = [];   
 let rawJsonData = null; 
 
 async function loadAILottoDashboard() {
@@ -21,18 +20,19 @@ async function loadAILottoDashboard() {
       if (i <= 31) rawProb *= 0.82; 
       else rawProb *= 1.18; 
 
-      let cryptoNoise = (window.crypto.getRandomValues(new Uint32Array(1)) / 0xFFFFFFFF);
+      let cryptoNoise = (window.crypto.getRandomValues(new Uint32Array(1))[0] / 0xFFFFFFFF);
       realWeights[i] = rawProb * (0.85 + cryptoNoise * 0.3); 
     }
 
     globalAllSorted = Object.entries(realWeights);
-    globalAllSorted.sort((a, b) => b - a); 
+    
+    // 💡 審查核心 1：精準指定子陣列的第二維度數值 [1] 進行降序排序，徹底打破連號死結！
+    globalAllSorted.sort((a, b) => b[1] - a[1]); 
 
-    // 🌟 固定 AI 推薦：嚴格篩選「大過 31」的黃金前 7 名
+    // 🌟 固定 AI 推薦：嚴格篩選「大過 31」且排序最高的黃金前 7 名
     const bigOnlyArray = globalAllSorted.filter(([num, prob]) => parseInt(num) > 31);
     aiTop7 = bigOnlyArray.slice(0, 7).map(([num]) => num);
 
-    // 初始渲染
     renderDashboardUI();
 
     const realImportances = { missed_periods: 0.0, hot_cold_10: 0.0, recent_tracks: 0.0, odd_even_split: 35.0, color_bands_trend: 15.0, anti_clash_filter: 50.0 };
@@ -54,12 +54,14 @@ function renderDashboardUI() {
   ballsContainer.innerHTML = "";
   allBallsContainer.innerHTML = "";
 
-  // 1. 👑 渲染第一列：AI 固定推薦球（只看，不能被點擊修改）
+  // 1. 🤖 渲染第一列：AI 固定推薦球
   aiTop7.forEach((num) => {
     const ballColor = getBallColorHex(num, false);
     const formattedNum = String(num).padStart(2, '0');
     const targetItem = globalAllSorted.find(([bNum]) => bNum === num);
-    const weightVal = targetItem ? (targetItem[1] * 100).toFixed(0) : "0";
+    
+    // 💡 審查核心 2：精準讀取子陣列數值 targetItem[1]，消除 NaN 與常數 1 的錯誤數字
+    const weightVal = targetItem ? (parseFloat(targetItem[1]) * 100).toFixed(0) : "0";
 
     const ballHTML = `
       <div class="ball-wrapper" title="AI 精選高期望值大號碼">
@@ -78,7 +80,9 @@ function renderDashboardUI() {
       const ballColor = getBallColorHex(num, false);
       const formattedNum = String(num).padStart(2, '0');
       const targetItem = globalAllSorted.find(([bNum]) => bNum === num);
-      const weightVal = targetItem ? (targetItem[1] * 100).toFixed(0) : "0";
+      
+      // 💡 審查核心 3：自選球同步使用 targetItem[1] 讀取真實權重百分比
+      const weightVal = targetItem ? (parseFloat(targetItem[1]) * 100).toFixed(0) : "0";
 
       const ballHTML = `
         <div class="ball-wrapper" style="cursor: pointer;" onclick="toggleBallSelection('${num}')" title="點擊將此號碼移出你的自選組合">
@@ -91,12 +95,11 @@ function renderDashboardUI() {
     });
   }
 
-  // 3. 📊 渲染第三部分：49 碼大盤（滑鼠懸浮顯示三大微觀特徵數據）
+  // 3. 📊 渲染第三部分：49 碼大盤
   globalAllSorted.forEach(([num, prob], index) => {
     const ballColor = getBallColorHex(num, true);
     const formattedNum = String(num).padStart(2, '0');
     
-    // 💡 狀態判定：這顆球是不是被 User 選中了？
     const isUserSelected = userSelected.includes(num);
     const isAiRecommended = aiTop7.includes(num);
 
@@ -116,7 +119,7 @@ function renderDashboardUI() {
 
     const ballHTML = `
       <div class="ball-wrapper" 
-           style="padding: 5px; border-radius: 8px; background: ${isUserSelected ? '#ebf8ff' : 'transparent'}; border: ${isUserSelected ? '1px solid #3182ce' : (isAiRecommended ? '1px dashed #cbd5e1' : 'none')}; cursor: pointer;" 
+           style="padding: 5px; border-radius: 8px; background: ${isUserSelected ? '#ebf8ff' : 'transparent'}; border: ${isUserSelected ? '1px solid #3182ce' : (isAiRecommended ? '1px dashed #3182ce' : 'none')}; cursor: pointer;" 
            onclick="toggleBallSelection('${num}')"
            title="${microStatsText}">
         <div class="lotto-ball" style="width: 40px; height: 40px; font-size: 15px; margin: 0 auto; background: ${ballColor}; opacity: ${isUserSelected || isAiRecommended ? '1' : '0.75'}; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">${formattedNum}</div>
@@ -128,22 +131,18 @@ function renderDashboardUI() {
   });
 }
 
-// 🖱️ 專屬 User 的點擊分流控制
 function toggleBallSelection(num) {
   if (userSelected.includes(num)) {
-    // 已選過，再點一次就移除
     userSelected = userSelected.filter(b => b !== num);
   } else {
-    // 沒選過，且不超過 7 個就加進去
     if (userSelected.length < 7) {
       userSelected.push(num);
     } else {
-      // 滿 7 個時，採取先進先出替換
       userSelected.shift();
       userSelected.push(num);
     }
   }
-  renderDashboardUI(); // 即時重新渲染雙看板
+  renderDashboardUI(); 
 }
 
 function getBallColorHex(num, isDark) {
