@@ -59,7 +59,7 @@ function renderDashboardUI() {
     const ballColor = getBallColorHex(num, false);
     const formattedNum = String(num).padStart(2, '0');
     const targetItem = globalAllSorted.find(([bNum]) => bNum === num);
-    const weightVal = targetItem ? (targetItem * 100).toFixed(0) : "0";
+    const weightVal = targetItem ? (targetItem[1] * 100).toFixed(0) : "0";
 
     const ballHTML = `
       <div class="ball-wrapper" title="AI 精選高期望值大號碼">
