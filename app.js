@@ -59,7 +59,7 @@ async function loadAILottoDashboard() {
         } 
         const localTime = new Date(rawJsonData.last_updated).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" }); 
         if (metaElement) { 
-            metaElement.innerHTML = `數據更新時間：${localTime} • ⚖️ 混合決策引擎：<b>📌 固定期望值模型 (數據 100% 重現)</b>`; 
+            metaElement.innerHTML = `數據更新時間：${localTime} • ⚖️ 混合決策引擎：<b>📈 大數據精算模式 (當期最新變盤)</b>`; 
         } 
         let realWeights = {}; 
         for (let i = 1; i <= 49; i++) { 
