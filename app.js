@@ -10,7 +10,7 @@ async function loadAILottoDashboard() {
 
   try {
     const response = await fetch("./prediction_result.json");
-    if (!response.ok) throw new Error("找不到預測數據檔案。");
+    if (!response.ok) throw new Error("找不到預測數據檔案 (prediction_result.json)");
     rawJsonData = await response.json(); 
     
     const localTime = new Date(rawJsonData.last_updated).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" });
@@ -19,32 +19,29 @@ async function loadAILottoDashboard() {
     let realWeights = {};
     for (let i = 1; i <= 49; i++) {
       let rawProb = rawJsonData.number_probabilities[String(i)] || (6 / 49); 
-      
-      if (i <= 31) rawProb *= 0.85; 
-      else rawProb *= 1.15; 
+      if (i <= 31) rawProb *= 0.82; 
+      else rawProb *= 1.18; 
 
-      // 💡 修正：補上 [0] 索引以正常取得亂數值，避免產出 NaN
       let cryptoNoise = (window.crypto.getRandomValues(new Uint32Array(1))[0] / 0xFFFFFFFF);
       realWeights[String(i)] = rawProb * (0.85 + cryptoNoise * 0.3); 
     }
 
-    // 💡 修正：針對鍵值對 [num, weight] 進行第二項 (weight) 降序排序
     globalAllSorted = Object.entries(realWeights);
     globalAllSorted.sort((a, b) => b[1] - a[1]); 
 
     globalWeightsObj = {};
     globalAllSorted.forEach(([num, prob]) => {
-      globalWeightsObj[num] = (prob * 100).toFixed(1);
+      globalWeightsObj[num] = (prob * 100).toFixed(0);
     });
 
-    // 從 1-49 全體號碼中取最強的前 7 名
-    aiTop7 = globalAllSorted.slice(0, 7).map(([num]) => num);
+    const bigOnlyArray = globalAllSorted.filter(([num, prob]) => parseInt(num) > 31);
+    aiTop7 = bigOnlyArray.slice(0, 7).map(([num]) => num);
 
     renderDashboardUI();
 
   } catch (error) {
     console.error("前端載入失敗:", error);
-    metaElement.innerHTML = `<span style="color:red;">⚠️ 載入失敗: ${error.message}</span>`;
+    metaElement.innerHTML = `<span style="color:red;">⚠️ 載入失敗: ${error.message}（請確認 GitHub 根目錄是否有 prediction_result.json）</span>`;
   }
 }
 
@@ -59,30 +56,28 @@ function renderDashboardUI() {
   ballsContainer.innerHTML = "";
   allBallsContainer.innerHTML = "";
 
-  // 1. 🤖 PART 1：AI 固定精選列 (全體 1-49 號海選)
   aiTop7.forEach((num) => {
     const ballColor = getBallColorHex(num, false);
     const formattedNum = String(num).padStart(2, '0');
-    const weightVal = globalWeightsObj[num] || "12.2"; 
+    const weightVal = globalWeightsObj[num] || "0"; 
 
     const ballHTML = `
-      <div class="ball-wrapper" title="AI 精選黃金組合號碼">
+      <div class="ball-wrapper" title="AI 精選高回報大號碼">
         <div class="lotto-ball" style="background: ${ballColor};">${formattedNum}</div>
         <div class="prob-label" style="font-size: 11px; font-weight: bold; margin-top: 4px; color: #1a365d;">回報: ${weightVal}</div>
       </div>`;
     ballsContainer.insertAdjacentHTML("beforeend", ballHTML);
   });
 
-  // 2. 🛒 PART 3：User 自選看板
   if (userSelected.length === 0) {
-    userBallsContainer.innerHTML = `<span id="user-hint" style="color: #a0aec0; font-size: 14px; font-weight: 500;">💡 未選號碼，請喺上面 PART 2 大盤點擊號碼球，即可在此處即時組裝你嘅心水打和防線！</span>`;
+    userBallsContainer.innerHTML = `<span id="user-hint" style="color: #a0aec0; font-size: 14px; font-weight: 500;">💡 未選號碼，請喺下面 49 碼大盤點擊號碼球，即可即時組裝你機率攻守兼備嘅打和防線！</span>`;
     if (statsPanel) statsPanel.style.display = "none";
   } else {
     userBallsContainer.innerHTML = "";
     userSelected.forEach((num) => {
       const ballColor = getBallColorHex(num, false);
       const formattedNum = String(num).padStart(2, '0');
-      const weightVal = globalWeightsObj[num] || "12.2"; 
+      const weightVal = globalWeightsObj[num] || "0"; 
 
       let rawScore = rawJsonData && rawJsonData.number_probabilities[num] ? rawJsonData.number_probabilities[num] : 0.05;
       let missedPeriods = Math.floor((1 - rawScore) * 15) + (parseInt(num) % 4); 
@@ -90,7 +85,7 @@ function renderDashboardUI() {
       let recentTrackStatus = hotCold10 > 2 ? "🔺 升" : "🔸 穩"; 
 
       const ballHTML = `
-        <div class="ball-wrapper" style="cursor: pointer; padding: 8px; border-radius: 10px; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.04); text-align: center; min-width: 65px;" onclick="toggleBallSelection('${num}')" title="點擊將呢個字移出自選組合">
+        <div class="ball-wrapper" style="cursor: pointer; padding: 8px; border-radius: 10px; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.04); text-align: center; min-width: 65px;" onclick="toggleBallSelection('${num}')">
           <div class="lotto-ball" style="background: ${ballColor}; margin: 0 auto;">${formattedNum}</div>
           <div class="prob-label" style="font-size: 11px; font-weight: bold; margin-top: 5px; color: #1a365d; line-height: 1.4;">
             <div>🏆 回報: ${weightVal}</div>
@@ -110,23 +105,19 @@ function renderDashboardUI() {
       let birthdayClashCount = 0; 
       
       userSelected.forEach(num => {
-        const cleanNum = parseInt(String(num).trim());
-        totalScoreSum += parseFloat(globalWeightsObj[num] || 12.2);
-        if (cleanNum <= 31) birthdayClashCount++; 
+        totalScoreSum += parseFloat(globalWeightsObj[num] || 50);
+        if (parseInt(num) <= 31) birthdayClashCount++;
       });
       
       const avgWeight = totalScoreSum / 7;
-      const breakEvenProb = (3.12 * (0.85 + (avgWeight / 15) * 0.3)).toFixed(2);
+      const breakEvenProb = (3.12 * (0.9 + (avgWeight / 100) * 0.2)).toFixed(2);
       document.getElementById("stat-breakeven").innerHTML = `約 <b>${breakEvenProb}%</b> (每買 32 次預期可成功打和兼倒賺 1 次)`;
 
-      let evLevel = "⭐⭐⭐ 常規穩健組合";
-      if (birthdayClashCount === 0) {
-        evLevel = "🔥 ⭐⭐⭐⭐⭐ 極致獨得 (純大號利潤防線)";
-      } else if (birthdayClashCount <= 2) {
-        evLevel = "✨ ⭐⭐⭐⭐ 優異防撞 (大碼攻守兼備)";
-      } else if (birthdayClashCount >= 5) {
-        evLevel = "⚠️ ⭐ 獎金遭嚴重稀釋 (生日高度撞號區)";
-      }
+      let evScore = Math.floor(avgWeight * (1.0 - (birthdayClashCount * 0.08)));
+      let evLevel = "⭐⭐⭐ 常規穩健";
+      if (evScore >= 68) evLevel = "🔥 ⭐⭐⭐⭐⭐ 極致獨得 (全大碼防線)";
+      else if (evScore >= 58) evLevel = "✨ ⭐⭐⭐⭐ 優異防撞 (大碼攻守兼備)";
+      else if (evScore < 45) evLevel = "⚠️ ⭐ 獎金遭嚴重稀釋 (生日撞號區)";
       
       document.getElementById("stat-ev").innerHTML = `綜合評級為 [ <b>${evLevel}</b> ]`;
     } else if (statsPanel) {
@@ -136,11 +127,9 @@ function renderDashboardUI() {
 
   let displayArray = [...globalAllSorted];
   if (currentSortMode === "number") {
-    // 💡 修正：針對鍵值對 [num, weight] 的第一項 (num) 轉整數排序
     displayArray.sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
   }
 
-  // 3. 📊 PART 2：大盤網格
   displayArray.forEach(([num, prob]) => {
     const ballColor = getBallColorHex(num, true);
     const formattedNum = String(num).padStart(2, '0');
@@ -151,7 +140,7 @@ function renderDashboardUI() {
     let missedPeriods = Math.floor((1 - rawScore) * 15) + (parseInt(num) % 4); 
     let hotCold10 = Math.floor(rawScore * 30) % 5; 
 
-    const weightVal = globalWeightsObj[num] || "12.2";
+    const weightVal = globalWeightsObj[num] || "0";
 
     const ballHTML = `
       <div class="ball-wrapper" 
@@ -179,7 +168,7 @@ function changeDisplayOrder(mode) {
     btnWeight.style.backgroundColor = "#3182ce"; btnWeight.style.color = "white"; btnWeight.style.border = "1px solid #3182ce";
     btnNumber.style.backgroundColor = "white"; btnNumber.style.color = "#4a5568"; btnNumber.style.border = "1px solid #cbd5e1";
   } else {
-    btnNumber.style.backgroundColor = "#3182ce"; btnNumber.style.color = "white"; btnNumber.style.border = "1px solid #cbd5e1";
+    btnNumber.style.backgroundColor = "#3182ce"; btnNumber.style.color = "white"; btnNumber.style.border = "1px solid #3182ce";
     btnWeight.style.backgroundColor = "white"; btnWeight.style.color = "#4a5568"; btnWeight.style.border = "1px solid #cbd5e1";
   }
   renderDashboardUI(); 
@@ -199,7 +188,6 @@ function toggleBallSelection(num) {
   renderDashboardUI(); 
 }
 
-// 💡 修正：剔除非程式碼字串，恢復完整的波色判斷邏輯
 function getBallColorHex(num, isDark) {
   const n = parseInt(num);
   let colorModeNum = 3; 
@@ -226,7 +214,9 @@ function getBallColorHex(num, isDark) {
   } else if (colorModeNum === 2) {
     return isDark ? "radial-gradient(circle at 30% 30%, #63b3ed, #1a365d)" : "radial-gradient(circle at 30% 30%, #3182ce, #1a365d)";
   } else {
-    return isDark ? "radial-gradient(circle at 30% 30%, #68d391, #1c4532)" : "radial-gradient(circle at 30% 30%, #48bb78, #22543d)";
+    return isDark 
+      ? "radial-gradient(circle at 30% 30%, #68d391, #1c4532)" 
+      : "radial-gradient(circle at 30% 30%, #48bb78, #22543d)";
   }
 }
 
