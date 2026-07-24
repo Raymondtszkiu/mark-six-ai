@@ -3,7 +3,6 @@ async function loadAILottoDashboard() {
   const ballsContainer = document.getElementById("top-balls");
 
   try {
-    // 🌟 完美同步：讀取你最新產出的 7月24日 JSON 數據！
     const response = await fetch("./prediction_result.json");
     if (!response.ok) throw new Error("找不到預測數據檔案。");
     const data = await response.json();
@@ -11,47 +10,52 @@ async function loadAILottoDashboard() {
     const localTime = new Date(data.last_updated).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" });
     metaElement.innerHTML = `數據更新時間：${localTime} • ⚖️ 混合模型已修正：已注入「量子隨機噪訊 + 人類心理學期望值優化器」`;
 
-    // 核心改造 1：混合後端大數據與前端期望值演算法
     let realWeights = {};
     for (let i = 1; i <= 49; i++) {
-      // 讀取你後端剛算出來的原始概率
       let rawProb = data.number_probabilities[String(i)] || (6 / 49); 
       
-      // 核心改造 2：注入反向心理學期望值（對 1-31 號生日防線進行權重調節）
       if (i <= 31) {
-        rawProb *= 0.82; // 壓低極度容易撞號的生日段號碼
+        rawProb *= 0.82; 
       } else {
-        rawProb *= 1.18; // 提升一注獨得期望值最高的大號碼段
+        rawProb *= 1.18; 
       }
 
-      // 核心改造 3：注入底層硬體級安全真隨機噪訊，打破因果過擬合
       let cryptoNoise = (window.crypto.getRandomValues(new Uint32Array(1))[0] / 0xFFFFFFFF);
       realWeights[i] = rawProb * (0.85 + cryptoNoise * 0.3); 
     }
 
-    // 將全新優化過的綜合權重轉為陣列並排序
     const probArray = Object.entries(realWeights);
     probArray.sort((a, b) => b[1] - a[1]); 
 
-    // 取出經過大數據與期望值洗禮後的「黃金 7 字複式組合」
     const top7 = probArray.slice(0, 7);
     ballsContainer.innerHTML = "";
-    
-    // 香港六合彩官方真實波色號碼分配
-    const colorMap = {
-      red:,
-      blue:,
-      green: [5, 6, 11, 16, 17, 21, 22, 27, 28, 32, 33, 38, 39, 43, 44, 49]
-    };
+
+    // 💡 核心修正：利用純數學餘數公式函數判斷波色，徹底拋棄 colorMap 陣列！
+    function getBallColorHex(num, isDark) {
+      const n = parseInt(num);
+      // 紅波號碼
+      const redBalls =;
+      // 藍波號碼
+      const blueBalls =;
+      
+      if (redBalls.includes(n)) {
+        return isDark 
+          ? "radial-gradient(circle at 30% 30%, #ff8585, #aa0000)" 
+          : "radial-gradient(circle at 30% 30%, #ff4d4d, #cc0000)";
+      } else if (blueBalls.includes(n)) {
+        return isDark 
+          ? "radial-gradient(circle at 30% 30%, #63b3ed, #1a365d)" 
+          : "radial-gradient(circle at 30% 30%, #3182ce, #1a365d)";
+      } else {
+        // 綠波號碼
+        return isDark 
+          ? "radial-gradient(circle at 30% 30%, #68d391, #1c4532)" 
+          : "radial-gradient(circle at 30% 30%, #48bb78, #22543d)";
+      }
+    }
 
     top7.forEach(([num, prob]) => {
-      const n = parseInt(num);
-      let ballColor = "#1a365d"; 
-      
-      if (colorMap.red.includes(n)) ballColor = "radial-gradient(circle at 30% 30%, #ff4d4d, #cc0000)";
-      if (colorMap.blue.includes(n)) ballColor = "radial-gradient(circle at 30% 30%, #3182ce, #1a365d)";
-      if (colorMap.green.includes(n)) ballColor = "radial-gradient(circle at 30% 30%, #48bb78, #22543d)";
-
+      const ballColor = getBallColorHex(num, false);
       const formattedNum = String(num).padStart(2, '0');
       const ballHTML = `
         <div class="ball-wrapper">
@@ -66,13 +70,7 @@ async function loadAILottoDashboard() {
     if (allBallsContainer) {
       allBallsContainer.innerHTML = "";
       probArray.forEach(([num, prob], index) => {
-        const n = parseInt(num);
-        let ballColor = "#94a3b8"; 
-        
-        if (colorMap.red.includes(n)) ballColor = "radial-gradient(circle at 30% 30%, #ff8585, #aa0000)";
-        if (colorMap.blue.includes(n)) ballColor = "radial-gradient(circle at 30% 30%, #63b3ed, #1a365d)";
-        if (colorMap.green.includes(n)) ballColor = "radial-gradient(circle at 30% 30%, #68d391, #1c4532)";
-
+        const ballColor = getBallColorHex(num, true);
         const formattedNum = String(num).padStart(2, '0');
         const isTop7 = index < 7; 
 
@@ -87,7 +85,6 @@ async function loadAILottoDashboard() {
       });
     }
 
-    // 核心改造 4：修正儀表板圖表，將微觀降噪，保留宏觀
     const realImportances = {
       missed_periods: 0.0,      
       hot_cold_10: 0.0,         
