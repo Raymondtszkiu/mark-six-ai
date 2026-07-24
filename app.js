@@ -14,7 +14,7 @@ window.onload = function() {
     loadAILottoDashboard();
 };
 
-// 切換大盤排序模式（期望值 vs 波色順序）
+// 切換大盤排序模式
 function changeDisplayOrder(mode) {
     currentSortMode = mode;
     const btnWeight = document.getElementById("btn-sort-weight");
@@ -259,9 +259,9 @@ function renderDashboardUI() {
         let rawScore = rawJsonData?.number_probabilities?.[num] ?? 0.05; 
         let missedPeriods = Math.floor((1 - rawScore) * 15) + (parseInt(num) % 4);
         let baseFreq = (rawScore * 14) + (parseInt(num) % 3) * 0.2;
-        let freq10 = Math.max(0, Math.min(4, Math.round(baseFreq * 0.4)));     // 限縮在 0~4 次
-        let freq20 = Math.max(freq10, Math.min(7, Math.round(baseFreq * 0.8))); // 限縮在 freq10~7 次
-        let freq30 = Math.max(freq20, Math.min(10, Math.round(baseFreq * 1.2))); // 限縮在 freq20~10 次
+        let freq10 = Math.max(0, Math.min(4, Math.round(baseFreq * 0.4)));     
+        let freq20 = Math.max(freq10, Math.min(7, Math.round(baseFreq * 0.8))); 
+        let freq30 = Math.max(freq20, Math.min(10, Math.round(baseFreq * 1.2))); 
         let hotCold10 = freq10; 
         let recentTrackStatus = hotCold10 >= 2 ? "🔺 爆發" : "🔸 潛伏";
         const weightVal = globalWeightsObj[num] || "12.2";
@@ -281,26 +281,26 @@ function renderDashboardUI() {
         cardElement.style.background = isUserSelected ? "#ebf8ff" : "#fff";
         cardElement.style.transition = "all 0.2s";
 
-        // 🛰️ 【360度空間防撞牆】動態防撞計算 (滑鼠懸停時即時調整動態座標)
+        // 🛰️ 【360度空間防撞牆】動態計算上下與左右邊界
         cardElement.addEventListener('mouseover', function() {
             const rect = cardElement.getBoundingClientRect();
             
-            // 🛡️ 1. 上下防撞偵測
-            if (rect.top < 180) {
+            // 🛡️ 1. 【上下防撞偵測】若頂部視口距離小於 340px 則強制向下彈出
+            if (rect.top < 340) {
                 cardElement.style.setProperty('--tooltip-top', '115%');
                 cardElement.style.setProperty('--tooltip-bottom', 'auto');
-                cardElement.style.setProperty('--arrow-top', '103%');
+                cardElement.style.setProperty('--arrow-top', '-12px');
                 cardElement.style.setProperty('--arrow-bottom', 'auto');
                 cardElement.style.setProperty('--arrow-color', 'transparent transparent rgba(20, 24, 33, 0.98) transparent');
             } else {
                 cardElement.style.setProperty('--tooltip-top', 'auto');
                 cardElement.style.setProperty('--tooltip-bottom', '115%');
                 cardElement.style.setProperty('--arrow-top', 'auto');
-                cardElement.style.setProperty('--arrow-bottom', '103%');
+                cardElement.style.setProperty('--arrow-bottom', '-12px');
                 cardElement.style.setProperty('--arrow-color', 'rgba(20, 24, 33, 0.98) transparent transparent transparent');
             }
 
-            // 🛡️ 2. 左右防撞偵測
+            // 🛡️ 2. 【左右防撞偵測】
             const sideBuffer = 150;
             if (rect.left < sideBuffer) {
                 cardElement.style.setProperty('--tooltip-left', '0');
@@ -326,7 +326,7 @@ function renderDashboardUI() {
             }
         });
 
-        // 特徵權重安全讀取
+        // 安全讀取特徵權重
         let consecutiveWeight = rawJsonData?.feature_importances?.consecutive_analysis ? (rawJsonData.feature_importances.consecutive_analysis * 100).toFixed(1) : "24.0";
         let colorTrendWeight = rawJsonData?.feature_importances?.color_bands_trend ? (rawJsonData.feature_importances.color_bands_trend * 100).toFixed(1) : "22.0";
         let oddEvenWeight = rawJsonData?.feature_importances?.odd_even_split ? (rawJsonData.feature_importances.odd_even_split * 100).toFixed(1) : "20.5";
