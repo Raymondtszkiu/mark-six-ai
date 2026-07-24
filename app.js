@@ -78,7 +78,7 @@ function renderDashboardUI() {
       const ballColor = getBallColorHex(num, false);
       const formattedNum = String(num).padStart(2, '0');
       const targetItem = globalAllSorted.find(([bNum]) => bNum === num);
-      const weightVal = targetItem ? (targetItem * 100).toFixed(0) : "0";
+      const weightVal = targetItem ? (targetItem[1] * 100).toFixed(0) : "0";
 
       const ballHTML = `
         <div class="ball-wrapper" style="cursor: pointer;" onclick="toggleBallSelection('${num}')" title="點擊將此號碼移出你的自選組合">
