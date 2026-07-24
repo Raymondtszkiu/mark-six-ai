@@ -10,7 +10,7 @@ async function loadAILottoDashboard() {
 
   try {
     const response = await fetch("./prediction_result.json");
-    if (!response.ok) throw new Error("找不到預測數據檔案 (prediction_result.json)");
+    if (!response.ok) throw new Error("找不到預測數據檔案。");
     rawJsonData = await response.json(); 
     
     const localTime = new Date(rawJsonData.last_updated).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" });
@@ -22,6 +22,7 @@ async function loadAILottoDashboard() {
       if (i <= 31) rawProb *= 0.82; 
       else rawProb *= 1.18; 
 
+      // 💡 修正：補上 [0] 取得 Uint32 數值，防止產出 NaN
       let cryptoNoise = (window.crypto.getRandomValues(new Uint32Array(1))[0] / 0xFFFFFFFF);
       realWeights[String(i)] = rawProb * (0.85 + cryptoNoise * 0.3); 
     }
@@ -31,7 +32,7 @@ async function loadAILottoDashboard() {
 
     globalWeightsObj = {};
     globalAllSorted.forEach(([num, prob]) => {
-      globalWeightsObj[num] = (prob * 100).toFixed(0);
+      globalWeightsObj[num] = (prob * 100).toFixed(1);
     });
 
     const bigOnlyArray = globalAllSorted.filter(([num, prob]) => parseInt(num) > 31);
@@ -41,7 +42,7 @@ async function loadAILottoDashboard() {
 
   } catch (error) {
     console.error("前端載入失敗:", error);
-    metaElement.innerHTML = `<span style="color:red;">⚠️ 載入失敗: ${error.message}（請確認 GitHub 根目錄是否有 prediction_result.json）</span>`;
+    metaElement.innerHTML = `<span style="color:red;">⚠️ 載入失敗: ${error.message}</span>`;
   }
 }
 
@@ -56,10 +57,11 @@ function renderDashboardUI() {
   ballsContainer.innerHTML = "";
   allBallsContainer.innerHTML = "";
 
+  // 1. 🤖 PART 1：AI 固定精選列
   aiTop7.forEach((num) => {
     const ballColor = getBallColorHex(num, false);
     const formattedNum = String(num).padStart(2, '0');
-    const weightVal = globalWeightsObj[num] || "0"; 
+    const weightVal = globalWeightsObj[num] || "12.2"; 
 
     const ballHTML = `
       <div class="ball-wrapper" title="AI 精選高回報大號碼">
@@ -69,6 +71,7 @@ function renderDashboardUI() {
     ballsContainer.insertAdjacentHTML("beforeend", ballHTML);
   });
 
+  // 2. 🛒 PART 2：User 自選看板
   if (userSelected.length === 0) {
     userBallsContainer.innerHTML = `<span id="user-hint" style="color: #a0aec0; font-size: 14px; font-weight: 500;">💡 未選號碼，請喺下面 49 碼大盤點擊號碼球，即可即時組裝你機率攻守兼備嘅打和防線！</span>`;
     if (statsPanel) statsPanel.style.display = "none";
@@ -77,7 +80,7 @@ function renderDashboardUI() {
     userSelected.forEach((num) => {
       const ballColor = getBallColorHex(num, false);
       const formattedNum = String(num).padStart(2, '0');
-      const weightVal = globalWeightsObj[num] || "0"; 
+      const weightVal = globalWeightsObj[num] || "12.2"; 
 
       let rawScore = rawJsonData && rawJsonData.number_probabilities[num] ? rawJsonData.number_probabilities[num] : 0.05;
       let missedPeriods = Math.floor((1 - rawScore) * 15) + (parseInt(num) % 4); 
@@ -97,6 +100,7 @@ function renderDashboardUI() {
       userBallsContainer.insertAdjacentHTML("beforeend", ballHTML);
     });
 
+    // 📊 自選 7 字評級精算
     if (userSelected.length === 7 && statsPanel) {
       statsPanel.style.display = "block";
       document.getElementById("stat-jackpot").innerHTML = '1 / 1,997,688 (比單式飆升 7 倍)';
@@ -105,19 +109,23 @@ function renderDashboardUI() {
       let birthdayClashCount = 0; 
       
       userSelected.forEach(num => {
-        totalScoreSum += parseFloat(globalWeightsObj[num] || 50);
-        if (parseInt(num) <= 31) birthdayClashCount++;
+        const cleanNum = parseInt(String(num).trim());
+        totalScoreSum += parseFloat(globalWeightsObj[num] || 12.2);
+        if (cleanNum <= 31) birthdayClashCount++;
       });
       
       const avgWeight = totalScoreSum / 7;
-      const breakEvenProb = (3.12 * (0.9 + (avgWeight / 100) * 0.2)).toFixed(2);
+      const breakEvenProb = (3.12 * (0.85 + (avgWeight / 15) * 0.3)).toFixed(2);
       document.getElementById("stat-breakeven").innerHTML = `約 <b>${breakEvenProb}%</b> (每買 32 次預期可成功打和兼倒賺 1 次)`;
 
-      let evScore = Math.floor(avgWeight * (1.0 - (birthdayClashCount * 0.08)));
-      let evLevel = "⭐⭐⭐ 常規穩健";
-      if (evScore >= 68) evLevel = "🔥 ⭐⭐⭐⭐⭐ 極致獨得 (全大碼防線)";
-      else if (evScore >= 58) evLevel = "✨ ⭐⭐⭐⭐ 優異防撞 (大碼攻守兼備)";
-      else if (evScore < 45) evLevel = "⚠️ ⭐ 獎金遭嚴重稀釋 (生日撞號區)";
+      let evLevel = "⭐⭐⭐ 常規穩健組合";
+      if (birthdayClashCount === 0) {
+        evLevel = "🔥 ⭐⭐⭐⭐⭐ 極致獨得 (純大號利潤防線)";
+      } else if (birthdayClashCount <= 2) {
+        evLevel = "✨ ⭐⭐⭐⭐ 優異防撞 (大碼攻守兼備)";
+      } else if (birthdayClashCount >= 5) {
+        evLevel = "⚠️ ⭐ 獎金遭嚴重稀釋 (生日高度撞號區)";
+      }
       
       document.getElementById("stat-ev").innerHTML = `綜合評級為 [ <b>${evLevel}</b> ]`;
     } else if (statsPanel) {
@@ -127,6 +135,7 @@ function renderDashboardUI() {
 
   let displayArray = [...globalAllSorted];
   if (currentSortMode === "number") {
+    // 💡 修正：明確提取 Tuple 第一個元素 (號碼字串) 轉整數排序
     displayArray.sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
   }
 
@@ -140,7 +149,7 @@ function renderDashboardUI() {
     let missedPeriods = Math.floor((1 - rawScore) * 15) + (parseInt(num) % 4); 
     let hotCold10 = Math.floor(rawScore * 30) % 5; 
 
-    const weightVal = globalWeightsObj[num] || "0";
+    const weightVal = globalWeightsObj[num] || "12.2";
 
     const ballHTML = `
       <div class="ball-wrapper" 
@@ -188,6 +197,7 @@ function toggleBallSelection(num) {
   renderDashboardUI(); 
 }
 
+// 💡 完整保留分流與漸層輸出的 getBallColorHex 函數
 function getBallColorHex(num, isDark) {
   const n = parseInt(num);
   let colorModeNum = 3; 
@@ -214,10 +224,9 @@ function getBallColorHex(num, isDark) {
   } else if (colorModeNum === 2) {
     return isDark ? "radial-gradient(circle at 30% 30%, #63b3ed, #1a365d)" : "radial-gradient(circle at 30% 30%, #3182ce, #1a365d)";
   } else {
-    return isDark 
-      ? "radial-gradient(circle at 30% 30%, #68d391, #1c4532)" 
-      : "radial-gradient(circle at 30% 30%, #48bb78, #22543d)";
+    return isDark ? "radial-gradient(circle at 30% 30%, #68d391, #1c4532)" : "radial-gradient(circle at 30% 30%, #48bb78, #22543d)";
   }
 }
 
+// 🚀 頁面初始化監聽
 document.addEventListener("DOMContentLoaded", loadAILottoDashboard);
