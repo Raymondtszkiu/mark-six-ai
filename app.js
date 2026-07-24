@@ -14,7 +14,7 @@ async function loadAILottoDashboard() {
     rawJsonData = await response.json(); 
     
     const localTime = new Date(rawJsonData.last_updated).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" });
-    metaElement.innerHTML = `數據更新時間：${localTime} • ⚖️ 混合決策引擎：雙列面板與排序切換已完美解凍`;
+    metaElement.innerHTML = `數據更新時間：${localTime} • ⚖️ 混合決策引擎：AI 心理期望值最大化模型 (量子隨機降噪 + 撞號防禦機制)`;
 
     // 2. 混合後端基準概率與前端利潤最大化期望值演算法
     let realWeights = {};
