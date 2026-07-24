@@ -88,53 +88,61 @@
         }
 
         /* 滑鼠移上去卡片時，稍微放大並向上微浮，增加立體互動感 */
-        #all-49-balls > div:hover {
-            transform: translateY(-5px) scale(1.04);
-            z-index: 9999;
+         #all-49-balls > div {
+            position: relative;
+            cursor: pointer !important;
+            transition: transform 0.2s ease-in-out;
         }
 
-        /* 2. 懸停（Hover）時，自動浮現獨自一體、寬度正確的黑底白字數據框 */
+        /* 滑鼠移上去卡片時，稍微放大並向上微浮，增加立體互動感 */
+        #all-49-balls > div:hover {
+            transform: translateY(-5px) scale(1.04);
+            z-index: 999999; /* 確保高於一切 */
+        }
+
+        /* 2. 【核心修正】將提示框改為「向下彈出」，徹底避開網頁頂部邊界！ */
         #all-49-balls > div:hover::after {
             content: attr(data-info); /* 自動讀取 app.js 塞進去的當前球體專屬數據 */
             
-            /* 提示框外觀樣式設計 */
+            /* 💡 修改這裡：將 bottom 改為 top，讓它乖乖向下彈出，保證全畫面看得到 */
             position: absolute;
-            bottom: 115%; /* 完美浮現在號碼球正上方 */
+            top: 115%; 
             left: 50%;
             transform: translateX(-50%);
-            background-color: rgba(26, 32, 44, 0.96); /* 高級深色背景 */
+            background-color: rgba(20, 24, 33, 0.98); /* 高級深色背景 */
             color: #ffffff; /* 純白字 */
-            padding: 10px 14px;
+            padding: 12px 16px;
             font-size: 12px;
             font-weight: 500;
-            line-height: 1.5;
-            border-radius: 8px;
+            line-height: 1.6;
+            border-radius: 10px;
             white-space: pre-line; /* 支援 \n 換行排版 */
             text-align: left; /* 左對齊數據更工整 */
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
-            z-index: 99999;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            z-index: 9999999;
             pointer-events: none; /* 防止滑鼠卡到提示框 */
-            width: max-content; /* 解鎖寬度，不變成長條狀 */
+            width: max-content; /* 解鎖寬度 */
         }
 
-        /* 3. 為浮空提示框補上一個精緻的向下小箭頭 */
+        /* 3. 【核心修正】將提示框的小箭頭調轉，改為「朝上」直指號碼球 */
         #all-49-balls > div:hover::before {
             content: "";
             position: absolute;
-            bottom: 103%;
+            top: 103%; /* 💡 改為在卡片下方邊緣 */
             left: 50%;
             transform: translateX(-50%);
-            border-width: 6px;
+            border-width: 7px;
             border-style: solid;
-            border-color: rgba(26, 32, 44, 0.96) transparent transparent transparent;
-            z-index: 99999;
+            /* 💡 這裡修改了顏色順序，讓箭頭朝上變成了倒三角形 */
+            border-color: transparent transparent rgba(20, 24, 33, 0.98) transparent; 
+            z-index: 9999999;
             pointer-events: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🗳️ 香港六合彩 AI 預測儀表板<span class="version-badge">v3.6.0</span></h1>
+        <h1>🗳️ 香港六合彩 AI 預測儀表板<span class="version-badge">v3.7.0</span></h1>
         <div id="meta-info" class="meta-info">正在動態載入 AI 數據包...</div>
 
         <!-- 🎛️ 控制面板：手動加噪與還原固定數據按鈕 -->
