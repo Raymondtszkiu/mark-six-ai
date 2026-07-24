@@ -6,7 +6,6 @@ let aiAllTop7 = [];
 let userSelected = []; 
 let currentSortMode = "weight";
 
-// 📌 預設進入網頁：100% 採用 JSON 數據計算，每次重新整理結果完全固定
 async function loadAILottoDashboard() { 
     const metaElement = document.getElementById("meta-info"); 
     try { 
@@ -35,7 +34,6 @@ async function loadAILottoDashboard() {
     } 
 }
 
-// 🎲 手動點擊按鈕：注入加密隨機噪訊微擾
 function rerollWithNoise() { 
     if (!rawJsonData) return; 
     const metaElement = document.getElementById("meta-info"); 
@@ -54,7 +52,6 @@ function rerollWithNoise() {
     processWeightsAndRender(realWeights); 
 }
 
-// ⚙️ 核心權重排序與 UI 觸發組件
 function processWeightsAndRender(realWeights) { 
     globalAllSorted = Object.entries(realWeights); 
     globalAllSorted.sort((a, b) => b[1] - a[1]); 
@@ -110,7 +107,7 @@ function renderDashboardUI() {
         }); 
     } 
 
-    // 🛒 PART 3：專屬自選 7 字複式組合看板與分析計算
+    // PART 3：專屬自選 7 字複式組合看板
     if (userSelected.length === 0) { 
         userBallsContainer.innerHTML = `<span id="user-hint" style="color: #a0aec0; font-size: 14px; font-weight: 500;">💡 未選號碼，請喺下面 PART 4 大盤點擊號碼球，即可在此處即時組裝你嘅心水打和防線！</span>`; 
         if (statsPanel) statsPanel.style.display = "none"; 
@@ -136,7 +133,6 @@ function renderDashboardUI() {
             userBallsContainer.insertAdjacentHTML("beforeend", ballHTML); 
         }); 
 
-        // 🎯【完全對應圖 2 的 7 字複式分析 logic】
         if (userSelected.length === 7 && statsPanel) { 
             statsPanel.style.display = "block"; 
             document.getElementById("stat-jackpot").innerHTML = '1 / 1,997,688 (比單式飆升 7 倍)'; 
@@ -165,7 +161,7 @@ function renderDashboardUI() {
         displayArray.sort((a, b) => parseInt(a[0]) - parseInt(b[0])); 
     } 
 
-    // 📊 PART 4：渲染下方的 49 碼全數字冷熱即時大盤
+    // PART 4：渲染下方的 49 碼全數字冷熱即時大盤
     displayArray.forEach(([num, prob]) => { 
         const ballColor = getBallColorHex(num, true); 
         const formattedNum = String(num).padStart(2, '0'); 
@@ -194,7 +190,7 @@ function renderDashboardUI() {
         cardElement.style.background = isUserSelected ? "#ebf8ff" : "#fff";
         cardElement.style.transition = "all 0.2s";
 
-        // 設定 data-info 供 CSS Tooltip 顯示
+        // 設定 data-info 供 CSS 黑色 Tooltip 讀取
         cardElement.setAttribute('data-info', `🔮 號碼 ${formattedNum} 精密分析\n⚖️ 回報率：${weightVal}x\n⏱️ 盲門期數：${missedPeriods} 期\n🔥 近期旺弱：${hotCold10} 次\n📈 走勢預測：${recentTrackStatus}`);
 
         cardElement.innerHTML = `
@@ -211,35 +207,6 @@ function renderDashboardUI() {
                 toggleBallSelection(num);
             }
         };
-
-        // 滑鼠移入：即時動態 PART 3 看板預覽（僅在未選號時）
-        cardElement.addEventListener("mouseover", () => {
-            const userHintArea = document.getElementById("user-hint");
-            if (userHintArea && userSelected.length === 0) {
-                userHintArea.style.color = "#1a202c";
-                userHintArea.style.fontWeight = "normal";
-                userHintArea.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: center; gap: 30px; width: 100%; animation: fadeIn 0.2s ease-in-out;">
-                    <div class="lotto-ball" style="background: ${ballColor}; width: 50px; height: 50px; font-size: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">${formattedNum}</div>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 30px; text-align: left; font-size: 13px; font-family: sans-serif;">
-                        <div style="color: #1a365d;">🏆 <b>回報率</b>：<span style="font-weight: bold; color: #805ad5;">${weightVal}x</span></div>
-                        <div style="color: #4a5568;">⏱️ <b>盲門期數</b>：<span style="font-weight: bold;">${missedPeriods} 期</span></div>
-                        <div style="color: #e53e3e;">🔥 <b>近期旺弱</b>：<span style="font-weight: bold;">${hotCold10} 次</span></div>
-                        <div style="color: #3182ce;">📈 <b>走勢預測</b>：<span style="font-weight: bold; color: ${hotCold10 > 2 ? '#e53e3e' : '#3182ce'};">${recentTrackStatus}</span></div>
-                    </div>
-                </div>`;
-            }
-        });
-
-        // 滑鼠移出：還原提示文字
-        cardElement.addEventListener("mouseout", () => {
-            const userHintArea = document.getElementById("user-hint");
-            if (userHintArea && userSelected.length === 0) {
-                userHintArea.style.color = "#a0aec0";
-                userHintArea.style.fontWeight = "500";
-                userHintArea.innerHTML = `💡 未選號碼，請喺下面 PART 4 大盤點擊號碼球，即可在此處即時組裝你嘅心水打和防線！`;
-            }
-        });
 
         allBallsContainer.appendChild(cardElement);
     });
