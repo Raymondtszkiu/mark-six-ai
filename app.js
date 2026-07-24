@@ -2,6 +2,7 @@ let globalAllSorted = [];
 let aiTop7 = [];        
 let userSelected = [];   
 let rawJsonData = null; 
+let currentSortMode = "weight"; // 預設依權重排序
 
 async function loadAILottoDashboard() {
   const metaElement = document.getElementById("meta-info");
@@ -12,7 +13,7 @@ async function loadAILottoDashboard() {
     rawJsonData = await response.json(); 
     
     const localTime = new Date(rawJsonData.last_updated).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" });
-    metaElement.innerHTML = `數據更新時間：${localTime} • ⚖️ 混合決策引擎：User 自選區已完美解鎖「微觀歷史數據面板」`;
+    metaElement.innerHTML = `數據更新時間：${localTime} • ⚖️ 決策面板完全體：全網格已同步支援「自選微觀數據 + 雙模式切換」`;
 
     let realWeights = {};
     for (let i = 1; i <= 49; i++) {
@@ -66,7 +67,7 @@ function renderDashboardUI() {
     ballsContainer.insertAdjacentHTML("beforeend", ballHTML);
   });
 
-  // 2. 🛒 💡 審查通過：渲染第二列 User 自選看板，橫向展開注入四大微觀指標小標籤
+  // 2. 🛒 渲染第二列：User 自選看板（同步顯示三大微觀標籤）
   if (userSelected.length === 0) {
     userBallsContainer.innerHTML = `<span id="user-hint" style="color: #a0aec0; font-size: 14px; font-weight: 500;">💡 目前尚未選碼，請在下方 49 碼大盤中點擊球體，即可在此處即時組裝你的自選組合！</span>`;
   } else {
@@ -77,7 +78,6 @@ function renderDashboardUI() {
       const targetItem = globalAllSorted.find(([bNum]) => bNum === num);
       const weightVal = targetItem ? (parseFloat(targetItem) * 100).toFixed(0) : "0";
 
-      // 提取並計算微觀冷熱大數據
       let rawScore = rawJsonData && rawJsonData.number_probabilities[num] ? rawJsonData.number_probabilities[num] : 0.05;
       let missedPeriods = Math.floor((1 - rawScore) * 15) + (parseInt(num) % 4); 
       let hotCold10 = Math.floor(rawScore * 30) % 5; 
@@ -97,8 +97,14 @@ function renderDashboardUI() {
     });
   }
 
+  // 💡 依據選定的模式切換大盤排列順序
+  let displayArray = [...globalAllSorted];
+  if (currentSortMode === "number") {
+    displayArray.sort((a, b) => parseInt(a) - parseInt(b));
+  }
+
   // 3. 📊 渲染第三部分：49 碼大盤
-  globalAllSorted.forEach(([num, prob], index) => {
+  displayArray.forEach(([num, prob]) => {
     const ballColor = getBallColorHex(num, true);
     const formattedNum = String(num).padStart(2, '0');
     
@@ -110,9 +116,11 @@ function renderDashboardUI() {
     let hotCold10 = Math.floor(rawScore * 30) % 5; 
     let recentTrackStatus = hotCold10 > 2 ? "活躍上升中" : "常態常規波動"; 
 
+    const trueRank = globalAllSorted.findIndex(([bNum]) => bNum === num) + 1;
+
     let microStatsText = `號碼: ${formattedNum} 號\n`;
     microStatsText += `-------------------------\n`;
-    microStatsText += `🔮 心理期望值總排名：第 ${index + 1}名\n`;
+    microStatsText += `🔮 心理期望值總排名：第 ${trueRank} 名\n`;
     microStatsText += `⏳ 歷史遺漏期數：已連續 ${missedPeriods} 期未攪出\n`;
     microStatsText += `🔥 近 10 期冷熱度：近 10 期共開出 ${hotCold10} 次\n`;
     microStatsText += `🔗 近期開出軌跡：曲線目前處於 [ ${recentTrackStatus} ]\n`;
@@ -131,6 +139,24 @@ function renderDashboardUI() {
       </div>`;
     allBallsContainer.insertAdjacentHTML("beforeend", ballHTML);
   });
+}
+
+// 🖱️ 處理按鈕切換的核心函數
+function changeDisplayOrder(mode) {
+  currentSortMode = mode;
+  const btnWeight = document.getElementById("btn-sort-weight");
+  const btnNumber = document.getElementById("btn-sort-number");
+  
+  if (!btnWeight || !btnNumber) return;
+
+  if (mode === "weight") {
+    btnWeight.style.backgroundColor = "#3182ce"; btnWeight.style.color = "white"; btnWeight.style.border = "1px solid #3182ce";
+    btnNumber.style.backgroundColor = "white"; btnNumber.style.color = "#4a5568"; btnNumber.style.border = "1px solid #cbd5e1";
+  } else {
+    btnNumber.style.backgroundColor = "#3182ce"; btnNumber.style.color = "white"; btnNumber.style.border = "1px solid #3182ce";
+    btnWeight.style.backgroundColor = "white"; btnWeight.style.color = "#4a5568"; btnWeight.style.border = "1px solid #cbd5e1";
+  }
+  renderDashboardUI(); 
 }
 
 function toggleBallSelection(num) {
@@ -168,6 +194,7 @@ function renderNativeChart(importances) {
   const container = document.getElementById("native-chart-container");
   if (!container) return;
   container.innerHTML = "";
+  
   const features = [
     { label: "❌ 歷史遺漏期數 (微觀噪音)", value: importances.missed_periods },
     { label: "❌ 近 10 期冷熱度 (微觀噪音)", value: importances.hot_cold_10 },
@@ -176,17 +203,22 @@ function renderNativeChart(importances) {
     { label: "🎨 三門波段常態走勢 (數學宏觀)", value: importances.color_bands_trend },
     { label: "🧠 心理學反撞號期望值優化 (綜合)", value: importances.anti_clash_filter }
   ];
+
   features.forEach(f => {
     const valPercent = f.value.toFixed(2);
     const fillColor = f.value === 0 ? "#cbd5e1" : "linear-gradient(90deg, #3182ce, #1a365d)";
     const rowHTML = `
       <div class="bar-row">
         <div class="bar-label" style="${f.value === 0 ? 'color:#94a3b8;' : ''}">${f.label}</div>
-        <div class="bar-track"><div class="bar-fill" style="width: ${valPercent}%; background: ${fillColor};"></div></div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: ${valPercent}%; background: ${fillColor};"></div>
+        </div>
         <div class="bar-value" style="${f.value === 0 ? 'color:#94a3b8;' : ''}">${valPercent}%</div>
-      </div>`;
+      </div>
+    `;
     container.insertAdjacentHTML("beforeend", rowHTML);
   });
 }
 
+// 🚀 全局核心啟動點
 document.addEventListener("DOMContentLoaded", loadAILottoDashboard);
