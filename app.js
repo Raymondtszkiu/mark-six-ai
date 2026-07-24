@@ -59,7 +59,7 @@ async function loadAILottoDashboard() {
       ballsContainer.insertAdjacentHTML("beforeend", ballHTML);
     });
 
-    // === 🚀 核心新Part：渲染 49 個全數字大盤（放在你閃爍光標的位置） ===
+    // === 🚀 核心新Part：渲染 49 個全數字大盤 ===
     const allBallsContainer = document.getElementById("all-49-balls");
     if (allBallsContainer) {
       allBallsContainer.innerHTML = "";
@@ -103,3 +103,33 @@ async function loadAILottoDashboard() {
     metaElement.innerHTML = `<span style="color:red;">⚠️ 載入失敗: ${error.message}</span>`;
   }
 }
+
+function renderNativeChart(importances) {
+  const container = document.getElementById("native-chart-container");
+  container.innerHTML = "";
+
+  const features = [
+    { label: "❌ 歷史遺漏期數 (微觀噪音)", value: importances.missed_periods },
+    { label: "❌ 近 10 期冷熱度 (微觀噪音)", value: importances.hot_cold_10 },
+    { label: "❌ 近期開出軌跡 (微觀噪音)", value: importances.recent_tracks },
+    { label: "⚖️ 奇偶比例常態限制 (數學宏觀)", value: importances.odd_even_split },
+    { label: "🎨 三門波段常態走勢 (數學宏觀)", value: importances.color_bands_trend },
+    { label: "🧠 心理學反撞號期望值優化 (綜合)", value: importances.anti_clash_filter }
+  ];
+
+  features.forEach(f => {
+    const valPercent = f.value.toFixed(2);
+    const fillColor = f.value === 0 ? "#cbd5e1" : "linear-gradient(90deg, #3182ce, #1a365d)";
+    const rowHTML = `
+      <div class="bar-row">
+        <div class="bar-label" style="${f.value === 0 ? 'color:#94a3b8;' : ''}">${f.label}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: ${valPercent}%; background: ${fillColor};"></div>
+        </div>
+        <div class="bar-value" style="${f.value === 0 ? 'color:#94a3b8;' : ''}">${valPercent}%</div>
+      </div>`;
+    container.insertAdjacentHTML("beforeend", rowHTML);
+  });
+}
+
+document.addEventListener("DOMContentLoaded", loadAILottoDashboard);
