@@ -33,7 +33,7 @@
 
         <!-- 🖱️ 全新加入的第二列：User 自選看板 -->
         <h3 style="color: #2b6cb0; border-top: 1px dashed #bee3f8; padding-top: 20px; margin-top: 20px;">
-            🛒 PART 2：User 專屬自選 7 字複式組合 (點擊下方大盤調配)
+            🛒 PART 2：你嘅專屬自選 7 字複式組合 (點擊下方大盤調配)
         </h3>
         <div id="user-balls" class="balls-container" style="min-height: 85px; background: #f7fafc; border: 2px dashed #e2e8f0; border-radius: 12px; padding: 10px; align-items: center; justify-content: center;">
             <span id="user-hint" style="color: #a0aec0; font-size: 14px; font-weight: 500;">💡 目前尚未選碼，請在下方 49 碼大盤中點擊球體，即可在此處即時組裝你的自選組合！</span>
@@ -41,14 +41,15 @@
     
 <!-- 🎰 全新加入：49 個全數字期望值大盤展示區 -->
     <div class="chart-section" style="border-top: 1px solid #eee; margin-top: 40px; padding-top: 20px;">
-        <h3>📊 全球首創：六合彩 49 號全數字心理學期望值大盤</h3>
+        <h3>📊 六合彩 49 號全數字期望值與冷熱即時大盤</h3>
         <div style="margin-bottom: 15px; display: flex; gap: 10px;">
             <button id="btn-sort-weight" onclick="changeDisplayOrder('weight')" style="cursor: pointer; padding: 6px 12px; font-size: 13px; font-weight: bold; border-radius: 6px; border: 1px solid #3182ce; background-color: #3182ce; color: white; transition: all 0.2s;">🔥 依綜合權重排序</button>
             <button id="btn-sort-number" onclick="changeDisplayOrder('number')" style="cursor: pointer; padding: 6px 12px; font-size: 13px; font-weight: bold; border-radius: 6px; border: 1px solid #cbd5e1; background-color: white; color: #4a5568; transition: all 0.2s;">🔢 依號碼順序排列</button>
         </div>
-        <p style="font-size: 13px; color: #666; margin-bottom: 20px;">
-            💡 提示：下方已為你羅列所有 49 個號碼的即時綜合權重。你可以自由挑選高排名的大號碼衝擊頭獎，或搭配前段的高噪訊小號碼來作為中 3 個字的「打和防線」。
-        🖱️ <b>滑鼠互動功能已啟用</b>：點擊下方大盤中的任何一顆球，即可將該號碼直接「手動替換」至上方的黃金 7 字主推組合中，方便你靈活調配中 3 個字的「打和防線」！
+        <p style="font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.6;">
+            💡 <b>港式投注攻略提示</b>：下面大盤已經幫你列出全港 49 個號碼球嘅即時期望值大盤。你可以一鍵切換排列模式，直接喺球體下面睇到最真實嘅 <b>⏱️ 盲門期數</b>（連續幾期冇開）同 <b>🔥 近期旺弱</b>（近 10 期開出次數）。
+            <br>
+            🖱️ <b>動態交互面板已啟用</b>：直接點擊下面大盤任何一粒號碼波，個字就會即時彈入上面 <b>「PART 2：你嘅專屬自選防線」</b> 裡面，仲會自動幫你橫向展開最詳細嘅走勢數據，方便你靈活調配中 3 個字就穩拿 $80 彩金嘅 <b>「$35 複式打和防線」</b>！
         </p>
         <div id="all-49-balls" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); gap: 12px;"></div>
     </div>    
