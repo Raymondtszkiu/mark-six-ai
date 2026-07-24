@@ -13,12 +13,9 @@ async function loadAILottoDashboard() {
     // 核心改造 1：拋棄 JSON 裡有偏見的概率，改用「真隨機演算法」重構 1-49 號的權重
     let realWeights = {};
     for (let i = 1; i <= 49; i++) {
-      // 每個球的物理初始機率完全公平 (6/49)
       let baseWeight = 6 / 49; 
       
       // 核心改造 2：注入反向心理學過濾（EV 最大化）
-      // 歷史上 1-31 號因生日效應極度熱門，中獎會被嚴重平分彩金
-      // 我們給予 31 號以下的號碼適度「扣分」，引導模型篩選出大號碼，確保一注獨得的期望值最高
       if (i <= 31) {
         baseWeight *= 0.85; // 降低熱門生日號碼的入選權重
       } else {
@@ -34,43 +31,69 @@ async function loadAILottoDashboard() {
     const probArray = Object.entries(realWeights);
     probArray.sort((a, b) => b[1] - a[1]); 
 
-    // 取出經過科學防撞號篩選後的「黃金前 6 個號碼」
+    // 取出經過科學防撞號篩選後的「黃金前 7 個號碼」
     const top7 = probArray.slice(0, 7);
-ballsContainer.innerHTML = "";
-
-// 順便把網頁上的球，根據馬會真實號碼自動染成「紅、藍、綠」三色
-const colorMap = {
-   red: [1, 2, 7, 8, 12, 13, 18, 19, 23, 24, 29, 30, 34, 35, 40, 45, 46],
-  blue: [3, 4, 9, 10, 14, 15, 20, 25, 26, 31, 36, 37, 41, 42, 47, 48],
-  green: [5, 6, 11, 16, 17, 21, 22, 27, 28, 32, 33, 38, 39, 43, 44, 49]
+    ballsContainer.innerHTML = "";
+    
+    // 香港六合彩官方真實波色號碼分配
+    const colorMap = {
+      red:,
+      blue:,
+      green: [5, 6, 11, 16, 17, 21, 22, 27, 28, 32, 33, 38, 39, 43, 44, 49]
     };
 
-top7.forEach(([num, prob]) => {
-  const n = parseInt(num);
-  let ballColor = "#1a365d"; // 預設底色
-  
-  // 判斷馬會真實波色
-  if (colorMap.red.includes(n)) ballColor = "radial-gradient(circle at 30% 30%, #ff4d4d, #cc0000)";
-  if (colorMap.blue.includes(n)) ballColor = "radial-gradient(circle at 30% 30%, #3182ce, #1a365d)";
-  if (colorMap.green.includes(n)) ballColor = "radial-gradient(circle at 30% 30%, #48bb78, #22543d)";
+    top7.forEach(([num, prob]) => {
+      const n = parseInt(num);
+      let ballColor = "#1a365d"; 
+      
+      if (colorMap.red.includes(n)) ballColor = "radial-gradient(circle at 30% 30%, #ff4d4d, #cc0000)";
+      if (colorMap.blue.includes(n)) ballColor = "radial-gradient(circle at 30% 30%, #3182ce, #1a365d)";
+      if (colorMap.green.includes(n)) ballColor = "radial-gradient(circle at 30% 30%, #48bb78, #22543d)";
 
-  const formattedNum = String(num).padStart(2, '0');
-  const ballHTML = `
-    <div class="ball-wrapper">
-      <div class="lotto-ball" style="background: ${ballColor};">${formattedNum}</div>
-      <div class="prob-label">期望回報: 優</div>
-    </div>`;
-  ballsContainer.insertAdjacentHTML("beforeend", ballHTML);
-});
+      const formattedNum = String(num).padStart(2, '0');
+      const ballHTML = `
+        <div class="ball-wrapper">
+          <div class="lotto-ball" style="background: ${ballColor};">${formattedNum}</div>
+          <div class="prob-label">期望回報: 優</div>
+        </div>`;
+      ballsContainer.insertAdjacentHTML("beforeend", ballHTML);
+    });
 
-    // 核心改造 4：修正儀表板圖表，將微觀噪音歸零，突顯宏觀古典機率
+    // === 🚀 核心新Part：渲染 49 個全數字大盤（放在你閃爍光標的位置） ===
+    const allBallsContainer = document.getElementById("all-49-balls");
+    if (allBallsContainer) {
+      allBallsContainer.innerHTML = "";
+      probArray.forEach(([num, prob], index) => {
+        const n = parseInt(num);
+        let ballColor = "#94a3b8"; 
+        
+        if (colorMap.red.includes(n)) ballColor = "radial-gradient(circle at 30% 30%, #ff8585, #aa0000)";
+        if (colorMap.blue.includes(n)) ballColor = "radial-gradient(circle at 30% 30%, #63b3ed, #1a365d)";
+        if (colorMap.green.includes(n)) ballColor = "radial-gradient(circle at 30% 30%, #68d391, #1c4532)";
+
+        const formattedNum = String(num).padStart(2, '0');
+        const isTop7 = index < 7; 
+
+        const ballHTML = `
+          <div class="ball-wrapper" style="padding: 5px; border-radius: 8px; background: ${isTop7 ? '#f0f4f8' : 'transparent'}; border: ${isTop7 ? '1px dashed #3182ce' : 'none'};">
+            <div class="lotto-ball" style="width: 40px; height: 40px; font-size: 15px; margin: 0 auto; background: ${ballColor}; opacity: ${isTop7 ? '1' : '0.85'}; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">${formattedNum}</div>
+            <div class="prob-label" style="font-size: 11px; font-weight: bold; margin-top: 4px; color: ${isTop7 ? '#2b6cb0' : '#4a5568'};">
+              ${isTop7 ? '第 ' + (index + 1) + ' 名' : '權重: ' + (prob * 100).toFixed(0)}
+            </div>
+          </div>`;
+        allBallsContainer.insertAdjacentHTML("beforeend", ballHTML);
+      });
+    }
+    // === 全數字大盤 Part 結束 ===
+
+    // 核心改造 4：修正儀表板圖表
     const realImportances = {
-      missed_periods: 0.0,      // 歷史遺漏：物理無關，權重歸 0%
-      hot_cold_10: 0.0,         // 冷熱度：物理無關，權重歸 0%
-      recent_tracks: 0.0,       // 開出軌跡：物理無關，權重歸 0%
-      odd_even_split: 35.0,     // 奇偶比例：古典數學常態分佈
-      color_bands_trend: 15.0,  // 波段走勢：古典數學常態分佈
-      anti_clash_filter: 50.0   // 心理學反撞號過濾器：核心演算法
+      missed_periods: 0.0,      
+      hot_cold_10: 0.0,         
+      recent_tracks: 0.0,       
+      odd_even_split: 35.0,     
+      color_bands_trend: 15.0,  
+      anti_clash_filter: 50.0   
     };
 
     renderNativeChart(realImportances);
@@ -80,34 +103,3 @@ top7.forEach(([num, prob]) => {
     metaElement.innerHTML = `<span style="color:red;">⚠️ 載入失敗: ${error.message}</span>`;
   }
 }
-
-function renderNativeChart(importances) {
-  const container = document.getElementById("native-chart-container");
-  container.innerHTML = "";
-
-  const features = [
-    { label: "❌ 歷史遺漏期數 (微觀噪音)", value: importances.missed_periods },
-    { label: "❌ 近 10 期冷熱度 (微觀噪音)", value: importances.hot_cold_10 },
-    { label: "❌ 近期開出軌跡 (微觀噪音)", value: importances.recent_tracks },
-    { label: "⚖️ 奇偶比例常態限制 (數學宏觀)", value: importances.odd_even_split },
-    { label: "🎨 三門波段常態走勢 (數學宏觀)", value: importances.color_bands_trend },
-    { label: "🧠 心理學反撞號期望值優化 (綜合)", value: importances.anti_clash_filter }
-  ];
-
-  features.forEach(f => {
-    const valPercent = f.value.toFixed(2);
-    // 如果權重是 0，改用灰色顯示，代表已成功過濾垃圾數據
-    const fillColor = f.value === 0 ? "#cbd5e1" : "linear-gradient(90deg, #3182ce, #1a365d)";
-    const rowHTML = `
-      <div class="bar-row">
-        <div class="bar-label" style="${f.value === 0 ? 'color:#94a3b8;' : ''}">${f.label}</div>
-        <div class="bar-track">
-          <div class="bar-fill" style="width: ${valPercent}%; background: ${fillColor};"></div>
-        </div>
-        <div class="bar-value" style="${f.value === 0 ? 'color:#94a3b8;' : ''}">${valPercent}%</div>
-      </div>`;
-    container.insertAdjacentHTML("beforeend", rowHTML);
-  });
-}
-
-document.addEventListener("DOMContentLoaded", loadAILottoDashboard);
