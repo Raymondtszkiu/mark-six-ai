@@ -56,32 +56,52 @@ function rerollWithNoise() {
     updateEngineUI("noise"); 
 }
 
-// 更新引擎按鈕高亮樣式
+// 🎯 更新引擎按鈕高亮樣式與精準對齊
 function updateEngineUI(mode) {
     const btnReroll = document.getElementById("btn-reroll");
     const btnFixed = document.getElementById("btn-reset-fixed");
     if (!btnReroll || !btnFixed) return;
 
+    // 1. 設定兩粒按鈕統一的基礎對齊與尺寸樣式
+    [btnReroll, btnFixed].forEach(btn => {
+        btn.style.display = "inline-flex";
+        btn.style.alignItems = "center";
+        btn.style.justifyContent = "center";
+        btn.style.height = "42px";
+        btn.style.padding = "0 18px";
+        btn.style.boxSizing = "border-box";
+        btn.style.borderRadius = "10px";
+        btn.style.fontSize = "14px";
+        btn.style.cursor = "pointer";
+        btn.style.transition = "all 0.2s ease";
+    });
+
     if (mode === "fixed") {
-        btnFixed.style.backgroundColor = "#ffffff";
-        btnFixed.style.color = "#3182ce";
+        // 📌 目前係【固定模型】：固定按鈕亮藍底 + 白字，量子按鈕變灰底外框
+        btnFixed.style.backgroundColor = "#3182ce";
+        btnFixed.style.color = "#ffffff";
         btnFixed.style.border = "2px solid #3182ce";
         btnFixed.style.fontWeight = "bold";
+        btnFixed.style.boxShadow = "0 2px 6px rgba(49, 130, 206, 0.3)";
 
-        btnReroll.style.backgroundColor = "#805ad5";
-        btnReroll.style.color = "#ffffff";
-        btnReroll.style.border = "none";
+        btnReroll.style.backgroundColor = "#f8fafc";
+        btnReroll.style.color = "#64748b";
+        btnReroll.style.border = "2px solid #cbd5e1";
         btnReroll.style.fontWeight = "normal";
+        btnReroll.style.boxShadow = "none";
     } else {
+        // 🎲 目前係【量子噪訊】：量子按鈕亮紫底 + 白字，固定按鈕變灰底外框
         btnReroll.style.backgroundColor = "#805ad5";
         btnReroll.style.color = "#ffffff";
-        btnReroll.style.border = "2px solid #553c9a";
+        btnReroll.style.border = "2px solid #805ad5";
         btnReroll.style.fontWeight = "bold";
+        btnReroll.style.boxShadow = "0 2px 6px rgba(128, 90, 213, 0.3)";
 
-        btnFixed.style.backgroundColor = "#f7fafc";
-        btnFixed.style.color = "#4a5568";
-        btnFixed.style.border = "1px solid #cbd5e1";
+        btnFixed.style.backgroundColor = "#f8fafc";
+        btnFixed.style.color = "#64748b";
+        btnFixed.style.border = "2px solid #cbd5e1";
         btnFixed.style.fontWeight = "normal";
+        btnFixed.style.boxShadow = "none";
     }
 }
 
