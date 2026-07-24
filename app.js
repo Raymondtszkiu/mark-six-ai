@@ -28,7 +28,6 @@ async function loadAILottoDashboard() {
       if (i <= 31) rawProb *= 0.82; 
       else rawProb *= 1.18; 
 
-      // 💡 預設不加任何隨機噪訊，確保每次進入網頁回報率完全固定
       realWeights[String(i)] = rawProb; 
     }
 
@@ -58,7 +57,6 @@ function rerollWithNoise() {
     if (i <= 31) rawProb *= 0.82; 
     else rawProb *= 1.18; 
 
-    // 🎲 手動觸發隨機噪訊 [0.85 ~ 1.15]
     let cryptoNoise = (window.crypto.getRandomValues(new Uint32Array(1))[0] / 0xFFFFFFFF);
     realWeights[String(i)] = rawProb * (0.85 + cryptoNoise * 0.3); 
   }
@@ -188,7 +186,7 @@ function renderDashboardUI() {
     displayArray.sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
   }
 
-  // 4. 📊 PART 3：渲染下方的 49 碼全數字冷熱即時大盤
+  // 4. 📊 PART 3：渲染下方的 49 碼全數字冷熱即時大盤 (帶有 Hover 即時預覽聯動功能)
   displayArray.forEach(([num, prob]) => {
     const ballColor = getBallColorHex(num, true);
     const formattedNum = String(num).padStart(2, '0');
@@ -199,6 +197,7 @@ function renderDashboardUI() {
     let rawScore = rawJsonData && rawJsonData.number_probabilities[num] ? rawJsonData.number_probabilities[num] : 0.05;
     let missedPeriods = Math.floor((1 - rawScore) * 15) + (parseInt(num) % 4); 
     let hotCold10 = Math.floor(rawScore * 30) % 5; 
+    let recentTrackStatus = hotCold10 > 2 ? "🔺 升" : "🔸 穩";
 
     const weightVal = globalWeightsObj[num] || "12.2";
     
@@ -208,18 +207,60 @@ function renderDashboardUI() {
     else if (isAiBigRec) badgeText = '🤖 大碼主推';
     else if (isAiAllRec) badgeText = '🤖 全碼精選';
 
-    const ballHTML = `
-      <div class="ball-wrapper" 
-           style="padding: 6px; border-radius: 8px; background: ${isUserSelected ? '#ebf8ff' : 'transparent'}; border: ${isUserSelected ? '1px solid #3182ce' : (isAiBigRec || isAiAllRec ? '1px dashed #3182ce' : 'none')}; cursor: pointer; text-align: center; min-width: 60px;" 
-           onclick="toggleBallSelection('${num}')">
-        <div class="lotto-ball" style="width: 40px; height: 40px; font-size: 15px; margin: 0 auto; background: ${ballColor}; opacity: ${isUserSelected || isAiBigRec || isAiAllRec ? '1' : '0.75'}; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">${formattedNum}</div>
-        <div class="prob-label" style="font-size: 10px; font-weight: bold; margin-top: 4px; color: ${isUserSelected ? '#3182ce' : '#4a5568'}; line-height: 1.3;">
-          <div>${badgeText}</div>
-          <div style="color: #64748b; font-weight: normal; font-size: 9px;">⏱️漏:${missedPeriods}</div>
-          <div style="color: #e53e3e; font-weight: normal; font-size: 9px;">🔥熱:${hotCold10}</div>
-        </div>
+    const cardElement = document.createElement("div");
+    cardElement.className = "ball-wrapper";
+    cardElement.style.cursor = "pointer";
+    cardElement.style.border = isUserSelected ? "1px solid #3182ce" : (isAiBigRec || isAiAllRec ? "1px dashed #3182ce" : "1px dashed #cbd5e1");
+    cardElement.style.borderRadius = "12px";
+    cardElement.style.padding = "10px 5px";
+    cardElement.style.background = isUserSelected ? "#ebf8ff" : "#fff";
+    cardElement.style.transition = "all 0.2s";
+
+    cardElement.innerHTML = `
+      <div class="lotto-ball" style="width: 40px; height: 40px; font-size: 15px; margin: 0 auto; background: ${ballColor}; opacity: ${isUserSelected || isAiBigRec || isAiAllRec ? '1' : '0.85'}; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">${formattedNum}</div>
+      <div class="prob-label" style="font-size: 10px; font-weight: bold; margin-top: 4px; color: ${isUserSelected ? '#3182ce' : '#4a5568'}; line-height: 1.3;">
+        <div>${badgeText}</div>
+        <div style="color: #64748b; font-weight: normal; font-size: 9px;">⏱️漏:${missedPeriods}</div>
+        <div style="color: #e53e3e; font-weight: normal; font-size: 9px;">🔥熱:${hotCold10}</div>
       </div>`;
-    allBallsContainer.insertAdjacentHTML("beforeend", ballHTML);
+
+    // 點擊事件：切換自選號碼
+    cardElement.onclick = () => {
+      if (typeof toggleBallSelection === "function") {
+        toggleBallSelection(num);
+      }
+    };
+
+    // 滑鼠移入：即時改寫 PART 2 頂部提示看板（僅限未選牌時）
+    cardElement.addEventListener("mouseover", () => {
+      const userHintArea = document.getElementById("user-hint");
+      if (userHintArea && userSelected.length === 0) {
+        userHintArea.style.color = "#1a202c";
+        userHintArea.style.fontWeight = "normal";
+        userHintArea.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: center; gap: 30px; width: 100%; animation: fadeIn 0.2s ease-in-out;">
+            <div class="lotto-ball" style="background: ${ballColor}; width: 50px; height: 50px; font-size: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">${formattedNum}</div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 30px; text-align: left; font-size: 13px; font-family: sans-serif;">
+              <div style="color: #1a365d;">🏆 <b>回報率</b>：<span style="font-weight: bold; color: #805ad5;">${weightVal}x</span></div>
+              <div style="color: #4a5568;">⏱️ <b>盲門期數</b>：<span style="font-weight: bold;">${missedPeriods} 期</span></div>
+              <div style="color: #e53e3e;">🔥 <b>近期旺弱</b>：<span style="font-weight: bold;">${hotCold10} 次</span></div>
+              <div style="color: #3182ce;">📈 <b>走勢預測</b>：<span style="font-weight: bold; color: ${hotCold10 > 2 ? '#e53e3e' : '#3182ce'};">${recentTrackStatus}</span></div>
+            </div>
+          </div>`;
+      }
+    });
+
+    // 滑鼠移出：還原原本的提示文字
+    cardElement.addEventListener("mouseout", () => {
+      const userHintArea = document.getElementById("user-hint");
+      if (userHintArea && userSelected.length === 0) {
+        userHintArea.style.color = "#a0aec0";
+        userHintArea.style.fontWeight = "500";
+        userHintArea.innerHTML = `💡 未選號碼，請喺下面 PART 3 大盤點擊號碼球，即可在此處即時組裝你嘅心水打和防線！`;
+      }
+    });
+
+    allBallsContainer.appendChild(cardElement);
   });
 }
 
