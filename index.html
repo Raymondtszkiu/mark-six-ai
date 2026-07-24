@@ -9,7 +9,7 @@
         .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
         h1 { text-align: center; color: #1a365d; margin-bottom: 5px; }
         .version-badge { display: inline-block; background-color: #e2e8f0; color: #4a5568; font-size: 11px; font-weight: bold; padding: 3px 8px; border-radius: 20px; vertical-align: middle; margin-left: 8px; line-height: 1.2; }
-        .meta-info { text-align: center; color: #666; font-size: 14px; margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        .meta-info { text-align: center; color: #666; font-size: 14px; margin-bottom: 15px; }
         .balls-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-bottom: 30px; }
         .ball-wrapper { text-align: center; }
         .lotto-ball { width: 55px; height: 55px; border-radius: 50%; color: white; font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
@@ -22,6 +22,12 @@
     <h1>🗳️ 香港六合彩 AI 預測儀表板<span class="version-badge">v3.5.0</span></h1>
     <div id="meta-info" class="meta-info">正在動態載入 AI 數據包...</div>
     
+    <!-- 🎛️ 控制面板：手動加噪與還原固定數據按鈕 -->
+    <div style="text-align: center; margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 20px; display: flex; justify-content: center; gap: 12px;">
+        <button id="btn-reroll" onclick="rerollWithNoise()" style="cursor: pointer; padding: 8px 16px; font-weight: bold; border-radius: 8px; border: none; background-color: #805ad5; color: white; transition: all 0.2s;">🎲 手動注入量子噪訊抽樣</button>
+        <button id="btn-reset-fixed" onclick="loadAILottoDashboard()" style="cursor: pointer; padding: 8px 16px; font-weight: bold; border-radius: 8px; border: 1px solid #cbd5e1; background-color: #f7fafc; color: #4a5568; transition: all 0.2s;">📌 還原固定數據模型</button>
+    </div>
+
     <!-- 🥇 PART 1：純大號防撞列 -->
     <h3>🔮 PART 1：AI 評估黃金 7 字複式組合 (大過 31 號碼高期望值)</h3>
     <div id="top-balls" class="balls-container"></div>
@@ -60,7 +66,7 @@
         <p style="font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.6;">
             💡 <b>港式投注攻略提示</b>：下面大盤已經幫你列出全港 49 個號碼球嘅即時期望值。你可以一鍵切換排列模式，直接喺球體下面睇到最真實嘅 <b>⏱️ 盲門期數</b>同 <b>🔥 近期旺弱</b>。
         </p>
-        <div id="all-49-balls" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); gap: 20px 12px; margin-bottom: 30px; width: 100%; clear: both;">
+        <div id="all-49-balls" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); gap: 20px 12px; margin-bottom: 30px; width: 100%; clear: both;"></div>
     </div>
 </div>
 <script src="app.js"></script>
