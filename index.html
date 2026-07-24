@@ -27,8 +27,17 @@
     <!-- 💡 核心修正：確保 HTML 裡面有這一行標籤 -->
     <h1>🗳️ 香港六合彩 AI 預測儀表板<span class="version-badge">v3.2.0</span></h1>
     <div id="meta-info" class="meta-info">正在動態載入 AI 數據包...</div>
-    <h3>🔮 AI 評估：下一期黃金 7 字複式高期望值組合</h3>
-    <div id="top-balls" class="balls-container"></div>
+   <!-- 🤖 保持不變的第一列：AI 原生精選 -->
+        <h3>🔮 PART 1：AI 評估黃金 7 字複式組合 (大過 31 高期望值)</h3>
+        <div id="top-balls" class="balls-container"></div>
+
+        <!-- 🖱️ 全新加入的第二列：User 自選看板 -->
+        <h3 style="color: #2b6cb0; border-top: 1px dashed #bee3f8; padding-top: 20px; margin-top: 20px;">
+            🛒 PART 2：User 專屬自選 7 字複式組合 (點擊下方大盤調配)
+        </h3>
+        <div id="user-balls" class="balls-container" style="min-height: 85px; background: #f7fafc; border: 2px dashed #e2e8f0; border-radius: 12px; padding: 10px; align-items: center; justify-content: center;">
+            <span id="user-hint" style="color: #a0aec0; font-size: 14px; font-weight: 500;">💡 目前尚未選碼，請在下方 49 碼大盤中點擊球體，即可在此處即時組裝你的自選組合！</span>
+        </div>
     <div class="chart-section">
         <h3>💡 隨機森林模型：14維度核心特徵決策依賴權重 (Feature Importances)</h3>
         <div id="native-chart-container"></div>
