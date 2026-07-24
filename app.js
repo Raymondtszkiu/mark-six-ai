@@ -157,9 +157,13 @@ function renderDashboardUI() {
     } 
 
     let displayArray = [...globalAllSorted]; 
-    if (currentSortMode === "number") { 
-        displayArray.sort((a, b) => parseInt(a[0]) - parseInt(b[0])); 
-    } 
+     if (currentSortMode === "number") {
+        displayArray.sort(function(a, b) {
+            var numA = parseInt(a[0]) || 0;
+            var numB = parseInt(b[0]) || 0;
+            return numA - numB;
+        });
+    }
 
         // 4. 📊 PART 3：渲染下方的 49 碼全數字冷熱即時大盤 
     displayArray.forEach(([num, prob]) => { 
