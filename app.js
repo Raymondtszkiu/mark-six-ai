@@ -225,6 +225,13 @@ function renderDashboardUI() {
             '⚖️ 單雙比例落點：' + oddEvenWeight + '%'
         );
 
+        // 🛠️ 【完美對接】融入了您微調好的 40px 卡片縮小樣式
+        cardElement.innerHTML = 
+            '<div class="lotto-ball" style="width: 40px; height: 40px; font-size: 15px; margin: 0 auto; background: ' + ballColor + ';">' + formattedNum + '</div>' +
+            '<div class="prob-label" style="font-size: 10px; font-weight: bold; margin-top: 4px; color: ' + (isUserSelected ? '#3182ce' : '#1a365d') + ';">' + badgeText + '</div>' +
+            '<div style="color: #64748b; font-weight: normal; font-size: 9px; margin-top: 3px;">⏱️ 漏:' + missedPeriods + '期</div>' +
+            '<div style="color: #e53e3e; font-weight: normal; font-size: 9px;">🔥 熱:' + hotCold10 + '</div>';
+
         // 渲染球體外觀文字結構
         cardElement.innerHTML = 
             '<div class="lotto-ball" style="background: ' + ballColor + '; margin: 0 auto;">' + formattedNum + '</div>' +
