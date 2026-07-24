@@ -35,20 +35,33 @@ async function loadAILottoDashboard() {
     probArray.sort((a, b) => b[1] - a[1]); 
 
     // 取出經過科學防撞號篩選後的「黃金前 6 個號碼」
-    const top6 = probArray.slice(0, 6);
-    ballsContainer.innerHTML = "";
-    
-    top6.forEach(([num, prob]) => {
-      // 將概率映射回真實物理概率 (約 12.24%)，消除過擬合的虛假百分比
-      const truePercentage = (12.24).toFixed(2); 
-      const formattedNum = String(num).padStart(2, '0');
-      const ballHTML = `
-        <div class="ball-wrapper">
-          <div class="lotto-ball" style="background: radial-gradient(circle at 30% 30%, #1a365d, #0d1b2e);">${formattedNum}</div>
-          <div class="prob-label">期望回報: 優</div>
-        </div>`;
-      ballsContainer.insertAdjacentHTML("beforeend", ballHTML);
-    });
+    const top7 = probArray.slice(0, 7);
+ballsContainer.innerHTML = "";
+
+// 順便把網頁上的球，根據馬會真實號碼自動染成「紅、藍、綠」三色
+const colorMap = {
+  red:,
+  blue:,
+  green: [5, 6, 11, 16, 17, 21, 22, 27, 28, 32, 33, 38, 39, 43, 44, 49]
+};
+
+top7.forEach(([num, prob]) => {
+  const n = parseInt(num);
+  let ballColor = "#1a365d"; // 預設底色
+  
+  // 判斷馬會真實波色
+  if (colorMap.red.includes(n)) ballColor = "radial-gradient(circle at 30% 30%, #ff4d4d, #cc0000)";
+  if (colorMap.blue.includes(n)) ballColor = "radial-gradient(circle at 30% 30%, #3182ce, #1a365d)";
+  if (colorMap.green.includes(n)) ballColor = "radial-gradient(circle at 30% 30%, #48bb78, #22543d)";
+
+  const formattedNum = String(num).padStart(2, '0');
+  const ballHTML = `
+    <div class="ball-wrapper">
+      <div class="lotto-ball" style="background: ${ballColor};">${formattedNum}</div>
+      <div class="prob-label">期望回報: 優</div>
+    </div>`;
+  ballsContainer.insertAdjacentHTML("beforeend", ballHTML);
+});
 
     // 核心改造 4：修正儀表板圖表，將微觀噪音歸零，突顯宏觀古典機率
     const realImportances = {
