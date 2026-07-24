@@ -258,10 +258,11 @@ function renderDashboardUI() {
         
         let rawScore = rawJsonData?.number_probabilities?.[num] ?? 0.05; 
         let missedPeriods = Math.floor((1 - rawScore) * 15) + (parseInt(num) % 4);
-        let freq10 = Math.floor(rawScore * 25) % 4;
-        let freq20 = Math.floor(rawScore * 48) % 6;
-        let freq30 = Math.floor(rawScore * 65) % 7;
-        let hotCold10 = freq10;
+        let baseFreq = (rawScore * 14) + (parseInt(num) % 3) * 0.2;
+        let freq10 = Math.max(0, Math.min(4, Math.round(baseFreq * 0.4)));     // 完美限縮在 0~4 次
+        let freq20 = Math.max(freq10, Math.min(7, Math.round(baseFreq * 0.8))); // 完美限縮在 freq10~7 次
+        let freq30 = Math.max(freq20, Math.min(10, Math.round(baseFreq * 1.2))); // 完美限縮在 freq20~10 次
+        let hotCold10 = freq10; 
         let recentTrackStatus = hotCold10 >= 2 ? "🔺 爆發" : "🔸 潛伏";
         const weightVal = globalWeightsObj[num] || "12.2";
         
