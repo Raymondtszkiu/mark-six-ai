@@ -14,7 +14,7 @@ window.onload = function() {
     loadAILottoDashboard();
 };
 
-// 切換大盤排序模式
+// 切換大盤排序模式（期望值 vs 波色順序）
 function changeDisplayOrder(mode) {
     currentSortMode = mode;
     const btnWeight = document.getElementById("btn-sort-weight");
@@ -259,9 +259,9 @@ function renderDashboardUI() {
         let rawScore = rawJsonData?.number_probabilities?.[num] ?? 0.05; 
         let missedPeriods = Math.floor((1 - rawScore) * 15) + (parseInt(num) % 4);
         let baseFreq = (rawScore * 14) + (parseInt(num) % 3) * 0.2;
-        let freq10 = Math.max(0, Math.min(4, Math.round(baseFreq * 0.4)));     // 完美限縮在 0~4 次
-        let freq20 = Math.max(freq10, Math.min(7, Math.round(baseFreq * 0.8))); // 完美限縮在 freq10~7 次
-        let freq30 = Math.max(freq20, Math.min(10, Math.round(baseFreq * 1.2))); // 完美限縮在 freq20~10 次
+        let freq10 = Math.max(0, Math.min(4, Math.round(baseFreq * 0.4)));     // 限縮在 0~4 次
+        let freq20 = Math.max(freq10, Math.min(7, Math.round(baseFreq * 0.8))); // 限縮在 freq10~7 次
+        let freq30 = Math.max(freq20, Math.min(10, Math.round(baseFreq * 1.2))); // 限縮在 freq20~10 次
         let hotCold10 = freq10; 
         let recentTrackStatus = hotCold10 >= 2 ? "🔺 爆發" : "🔸 潛伏";
         const weightVal = globalWeightsObj[num] || "12.2";
@@ -273,7 +273,6 @@ function renderDashboardUI() {
         else if (isAiAllRec) badgeText = '🤖 全碼精選';
 
         const cardElement = document.createElement("div");
-         const cardElement = document.createElement("div");
         cardElement.className = "ball-wrapper";
         cardElement.style.cursor = "pointer";
         cardElement.style.border = isUserSelected ? "2px solid #3182ce" : (isAiBigRec || isAiAllRec ? "1px dashed #3182ce" : "1px dashed #cbd5e1");
@@ -282,13 +281,11 @@ function renderDashboardUI() {
         cardElement.style.background = isUserSelected ? "#ebf8ff" : "#fff";
         cardElement.style.transition = "all 0.2s";
 
-        // ===================================================================
-        // 🛰️ 【360度全方向空間防撞牆】實時量度上下左右邊界，解決隨機排序撞牆問題！
-        // ===================================================================
+        // 🛰️ 【360度空間防撞牆】動態防撞計算 (滑鼠懸停時即時調整動態座標)
         cardElement.addEventListener('mouseover', function() {
             const rect = cardElement.getBoundingClientRect();
             
-            // 🛡️ 1. 【上下防撞偵測】不管號碼怎麼排序，只要在畫面上半部（距離頂部小於 180px）就向下彈
+            // 🛡️ 1. 上下防撞偵測
             if (rect.top < 180) {
                 cardElement.style.setProperty('--tooltip-top', '115%');
                 cardElement.style.setProperty('--tooltip-bottom', 'auto');
@@ -296,7 +293,6 @@ function renderDashboardUI() {
                 cardElement.style.setProperty('--arrow-bottom', 'auto');
                 cardElement.style.setProperty('--arrow-color', 'transparent transparent rgba(20, 24, 33, 0.98) transparent');
             } else {
-                // 在畫面下半部就向上飄
                 cardElement.style.setProperty('--tooltip-top', 'auto');
                 cardElement.style.setProperty('--tooltip-bottom', '115%');
                 cardElement.style.setProperty('--arrow-top', 'auto');
@@ -304,10 +300,9 @@ function renderDashboardUI() {
                 cardElement.style.setProperty('--arrow-color', 'rgba(20, 24, 33, 0.98) transparent transparent transparent');
             }
 
-            // 🛡️ 2. 【左右防撞偵測】
-            const sideBuffer = 150; // 安全左右緩衝寬度
+            // 🛡️ 2. 左右防撞偵測
+            const sideBuffer = 150;
             if (rect.left < sideBuffer) {
-                // 太靠左側邊界 -> 提示框靠左對齊，往右展開
                 cardElement.style.setProperty('--tooltip-left', '0');
                 cardElement.style.setProperty('--tooltip-right', 'auto');
                 cardElement.style.setProperty('--tooltip-transform', 'translateX(0)');
@@ -315,7 +310,6 @@ function renderDashboardUI() {
                 cardElement.style.setProperty('--arrow-right', 'auto');
                 cardElement.style.setProperty('--arrow-transform', 'translateX(0)');
             } else if (window.innerWidth - rect.right < sideBuffer) {
-                // 太靠右側邊界 -> 提示框靠右對齊，往左展開
                 cardElement.style.setProperty('--tooltip-left', 'auto');
                 cardElement.style.setProperty('--tooltip-right', '0');
                 cardElement.style.setProperty('--tooltip-transform', 'translateX(0)');
@@ -323,7 +317,6 @@ function renderDashboardUI() {
                 cardElement.style.setProperty('--arrow-right', '15px');
                 cardElement.style.setProperty('--arrow-transform', 'translateX(0)');
             } else {
-                // 居中安全區
                 cardElement.style.setProperty('--tooltip-left', '50%');
                 cardElement.style.setProperty('--tooltip-right', 'auto');
                 cardElement.style.setProperty('--tooltip-transform', 'translateX(-50%)');
@@ -333,21 +326,7 @@ function renderDashboardUI() {
             }
         });
 
-        // 安全讀取特徵權重，避免未定義導致崩潰
-        let consecutiveWeight = rawJsonData?.feature_importances?.consecutive_analysis ? (rawJsonData.feature_importances.consecutive_analysis * 100).toFixed(1) : "24.0";
-        let colorTrendWeight = rawJsonData?.feature_importances?.color_bands_trend ? (rawJsonData.feature_importances.color_bands_trend * 100).toFixed(1) : "22.0";
-        let oddEvenWeight = rawJsonData?.feature_importances?.odd_even_split ? (rawJsonData.feature_importances.odd_even_split * 100).toFixed(1) : "20.5";
-
-        cardElement.setAttribute('data-info', `🔮 號碼 ${formattedNum} AI 精密分析報告\n` + `------------------------------------\n` + `💰 獨得期望回報：${weightVal}x\n` + `⏱️ 當前盲門期數：${missedPeriods} 期\n` + `📈 當前變盤走勢：${recentTrackStatus}\n` + `------------------------------------\n` + `📊 核心滾動開出頻率：\n` + `⏮️ 前 10 期開出：${freq10} 次\n` + `⏮️ 前 20 期開出：${freq20} 次\n` + `⏮️ 前 30 期開出：${freq30} 次\n` + `------------------------------------\n` + `🤖 AI 核心特徵決策加權：\n` + `🔗 連號追蹤權重：${consecutiveWeight}%\n` + `🎨 波色區段趨勢：${colorTrendWeight}%\n` + `⚖️ 單雙比例落點：${oddEvenWeight}%` );
-        cardElement.className = "ball-wrapper";
-        cardElement.style.cursor = "pointer";
-        cardElement.style.border = isUserSelected ? "2px solid #3182ce" : (isAiBigRec || isAiAllRec ? "1px dashed #3182ce" : "1px dashed #cbd5e1");
-        cardElement.style.borderRadius = "12px";
-        cardElement.style.padding = "10px 5px";
-        cardElement.style.background = isUserSelected ? "#ebf8ff" : "#fff";
-        cardElement.style.transition = "all 0.2s";
-
-        // 安全讀取特徵權重，避免未定義導致崩潰
+        // 特徵權重安全讀取
         let consecutiveWeight = rawJsonData?.feature_importances?.consecutive_analysis ? (rawJsonData.feature_importances.consecutive_analysis * 100).toFixed(1) : "24.0";
         let colorTrendWeight = rawJsonData?.feature_importances?.color_bands_trend ? (rawJsonData.feature_importances.color_bands_trend * 100).toFixed(1) : "22.0";
         let oddEvenWeight = rawJsonData?.feature_importances?.odd_even_split ? (rawJsonData.feature_importances.odd_even_split * 100).toFixed(1) : "20.5";
