@@ -6,17 +6,20 @@ let userSelected = [];
 let rawJsonData = null; 
 let currentSortMode = "weight"; 
 
+// 📌 預設進入網頁：100% 採用 JSON 數據計算，每次重新整理結果完全固定
 async function loadAILottoDashboard() {
   const metaElement = document.getElementById("meta-info");
 
   try {
-    const response = await fetch("./prediction_result.json");
-    if (!response.ok) throw new Error("找不到預測數據檔案。");
-    rawJsonData = await response.json(); 
+    if (!rawJsonData) {
+      const response = await fetch("./prediction_result.json");
+      if (!response.ok) throw new Error("找不到預測數據檔案。");
+      rawJsonData = await response.json(); 
+    }
     
     const localTime = new Date(rawJsonData.last_updated).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" });
     if (metaElement) {
-      metaElement.innerHTML = `數據更新時間：${localTime} • ⚖️ 混合決策引擎：AI 雙流派對照面板與自選精算大盤已完全啟用`;
+      metaElement.innerHTML = `數據更新時間：${localTime} • ⚖️ 混合決策引擎：<b>📌 固定期望值模型 (數據 100% 重現)</b>`;
     }
 
     let realWeights = {};
@@ -25,28 +28,11 @@ async function loadAILottoDashboard() {
       if (i <= 31) rawProb *= 0.82; 
       else rawProb *= 1.18; 
 
-      // 💡 修正 1：加回 [0] 索引取得 Uint32Array 數值，防止產出 NaN
-      let cryptoNoise = (window.crypto.getRandomValues(new Uint32Array(1))[0] / 0xFFFFFFFF);
-      realWeights[String(i)] = rawProb * (0.85 + cryptoNoise * 0.3); 
+      // 💡 預設不加任何隨機噪訊，確保每次進入網頁回報率完全固定
+      realWeights[String(i)] = rawProb; 
     }
 
-    // 💡 修正 2：明確對 Tuple [num, weight] 的第二項 (權重) 進行降序排序
-    globalAllSorted = Object.entries(realWeights);
-    globalAllSorted.sort((a, b) => b[1] - a[1]); 
-
-    globalWeightsObj = {};
-    globalAllSorted.forEach(([num, prob]) => {
-      globalWeightsObj[num] = (prob * 100).toFixed(1);
-    });
-
-    // 🥇 流派 A：嚴格過濾大於 31 的前 7 名
-    const bigOnlyArray = globalAllSorted.filter(([num]) => parseInt(num) > 31);
-    aiBigTop7 = bigOnlyArray.slice(0, 7).map(([num]) => num);
-
-    // 🥈 流派 B：全體 1-49 海選前 7 名
-    aiAllTop7 = globalAllSorted.slice(0, 7).map(([num]) => num);
-
-    renderDashboardUI();
+    processWeightsAndRender(realWeights);
 
   } catch (error) {
     console.error("前端載入失敗:", error);
@@ -54,6 +40,47 @@ async function loadAILottoDashboard() {
       metaElement.innerHTML = `<span style="color:red;">⚠️ 載入失敗: ${error.message}</span>`;
     }
   }
+}
+
+// 🎲 手動點擊按鈕：注入加密隨機噪訊微擾
+function rerollWithNoise() {
+  if (!rawJsonData) return;
+  const metaElement = document.getElementById("meta-info");
+
+  const localTime = new Date(rawJsonData.last_updated).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" });
+  if (metaElement) {
+    metaElement.innerHTML = `數據更新時間：${localTime} • ⚖️ 混合決策引擎：<b>🎲 量子隨機噪訊抽樣模式 (微擾注入中)</b>`;
+  }
+
+  let realWeights = {};
+  for (let i = 1; i <= 49; i++) {
+    let rawProb = rawJsonData.number_probabilities[String(i)] || (6 / 49); 
+    if (i <= 31) rawProb *= 0.82; 
+    else rawProb *= 1.18; 
+
+    // 🎲 手動觸發隨機噪訊 [0.85 ~ 1.15]
+    let cryptoNoise = (window.crypto.getRandomValues(new Uint32Array(1))[0] / 0xFFFFFFFF);
+    realWeights[String(i)] = rawProb * (0.85 + cryptoNoise * 0.3); 
+  }
+
+  processWeightsAndRender(realWeights);
+}
+
+// ⚙️ 核心權重排序與 UI 觸發組件
+function processWeightsAndRender(realWeights) {
+  globalAllSorted = Object.entries(realWeights);
+  globalAllSorted.sort((a, b) => b[1] - a[1]); 
+
+  globalWeightsObj = {};
+  globalAllSorted.forEach(([num, prob]) => {
+    globalWeightsObj[num] = (prob * 100).toFixed(1);
+  });
+
+  const bigOnlyArray = globalAllSorted.filter(([num]) => parseInt(num) > 31);
+  aiBigTop7 = bigOnlyArray.slice(0, 7).map(([num]) => num);
+  aiAllTop7 = globalAllSorted.slice(0, 7).map(([num]) => num);
+
+  renderDashboardUI();
 }
 
 function renderDashboardUI() {
@@ -102,7 +129,7 @@ function renderDashboardUI() {
 
   // 3. 🛒 PART 2：User 專屬自選看板
   if (userSelected.length === 0) {
-    userBallsContainer.innerHTML = `<span id="user-hint" style="color: #a0aec0; font-size: 14px; font-weight: 500;">💡 未選號碼，請喺大盤點擊號碼球，即可在此處即時組裝你嘅心水打和防線！</span>`;
+    userBallsContainer.innerHTML = `<span id="user-hint" style="color: #a0aec0; font-size: 14px; font-weight: 500;">💡 未選號碼，請喺下面 PART 3 大盤點擊號碼球，即可在此處即時組裝你嘅心水打和防線！</span>`;
     if (statsPanel) statsPanel.style.display = "none";
   } else {
     userSelected.forEach((num) => {
@@ -158,7 +185,6 @@ function renderDashboardUI() {
 
   let displayArray = [...globalAllSorted];
   if (currentSortMode === "number") {
-    // 💡 修正 3：對 Tuple 的號碼 (索引 0) 轉數字排序
     displayArray.sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
   }
 
@@ -214,7 +240,6 @@ function changeDisplayOrder(mode) {
   renderDashboardUI(); 
 }
 
-// 💡 修正 4：清理非程式碼字串雜質與錯位括號
 function toggleBallSelection(num) {
   if (userSelected.includes(num)) {
     userSelected = userSelected.filter(b => b !== num);
