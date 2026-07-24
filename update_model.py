@@ -72,7 +72,6 @@ def generate_features(draws, target_period_idx):
             if (num - 1) in draw[:6] or (num + 1) in draw[:6]: neighbor_count += 1
         neighbor_ratio = neighbor_count / 5
         
-        # 💡 核心技術修正：拉平（Flatten）陣列特徵，確保 14 個維度在隨機森林中擁有獨立的扁平化索引
         feature_vector = [
             missed_count, appearance_10, 
             track_5[0], track_5[1], track_5[2], track_5[3], track_5[4],
@@ -100,25 +99,49 @@ def main():
     current_features, _ = generate_features(historical_draws, len(historical_draws)-1)
     probabilities = model.predict_proba(current_features)[:, 1]
     
-    # 💡 核心修正：精準對接 14 維扁平化特徵權重，徹底消滅 0.00% 偏置現象
+    # 🚀 核心新增：提取 10/20/30 期多時間窗口滾動特徵與動量比值 M
+    rolling_features_output = {}
+    eps = 1e-5
+    past_data = historical_draws
+    
+    for num in range(MIN_NUM, MAX_NUM + 1):
+        recent_10 = past_data[-10:] if len(past_data) >= 10 else past_data
+        recent_20 = past_data[-20:] if len(past_data) >= 20 else past_data
+        recent_30 = past_data[-30:] if len(past_data) >= 30 else past_data
+        
+        r10 = sum(1 for draw in recent_10 if num in draw) / (len(recent_10) or 1)
+        r20 = sum(1 for draw in recent_20 if num in draw) / (len(recent_20) or 1)
+        r30 = sum(1 for draw in recent_30 if num in draw) / (len(recent_30) or 1)
+        
+        # 動量比值 (10期熱度 / 30期熱度)
+        momentum = round((r10 + eps) / (r30 + eps), 2)
+        
+        rolling_features_output[str(num)] = {
+            "r10": round(r10, 4),
+            "r20": round(r20, 4),
+            "r30": round(r30, 4),
+            "momentum": momentum
+        }
+
     importances = model.feature_importances_
     output_data = {
         "last_updated": str(np.datetime64('now') + np.timedelta64(8, 'h')),
         "total_periods_trained": len(historical_draws),
         "number_probabilities": {str(num): float(prob) for num, prob in zip(range(MIN_NUM, MAX_NUM + 1), probabilities)},
+        "rolling_features": rolling_features_output,  # 🚀 成功寫入滾動特徵數據
         "feature_importances": {
             "missed_periods": float(importances[0]),
             "hot_cold_10": float(importances[1]),
             "recent_tracks": float(sum(importances[2:7])),
             "odd_even_split": float(importances[7] + importances[12]), 
             "color_bands_trend": float(sum(importances[8:12])),
-            "consecutive_analysis": float(importances[13] + importances[14]) # 🚀 修正完畢：連碼屬性與傾向權重完美融合
+            "consecutive_analysis": float(importances[13] + importances[14])
         }
     }
     
     with open("prediction_result.json", "w", encoding="utf-8") as f:
         json.dump(output_data, f, ensure_ascii=False, indent=2)
-    print("🎉 終極修復預測成功！最新結果已儲存。")
+    print("🎉 終極修復預測成功！滾動特徵已成功寫入 JSON。")
 
 if __name__ == "__main__":
     main()
