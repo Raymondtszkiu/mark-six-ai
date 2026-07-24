@@ -99,7 +99,7 @@ function renderDashboardUI() {
 
     if (userSelected.length === 7 && statsPanel) {
       statsPanel.style.display = "block";
-      document.getElementById("stat-jackpot").innerHTML = `<b>1 / 1,997,688</b> (比單式飆升 <b>7 倍</b>)`;
+      document.getElementById('stat-jackpot').innerHTML = '1 / 1,997,688 (比單式飆升 7 倍)';
       
       let totalScoreSum = 0;
       let birthdayClashCount = 0; 
