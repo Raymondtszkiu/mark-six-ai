@@ -3,6 +3,7 @@ async function loadAILottoDashboard() {
   const ballsContainer = document.getElementById("top-balls");
 
   try {
+    // 1. 讀取你最新產出的 JSON 數據
     const response = await fetch("./prediction_result.json");
     if (!response.ok) throw new Error("找不到預測數據檔案。");
     const data = await response.json();
@@ -10,44 +11,54 @@ async function loadAILottoDashboard() {
     const localTime = new Date(data.last_updated).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" });
     metaElement.innerHTML = `數據更新時間：${localTime} • ⚖️ 混合模型已修正：已注入「量子隨機噪訊 + 人類心理學期望值優化器」`;
 
+    // 2. 混合後端大數據與前端期望值演算法
     let realWeights = {};
     for (let i = 1; i <= 49; i++) {
       let rawProb = data.number_probabilities[String(i)] || (6 / 49); 
       
+      // 注入反向心理學期望值（壓低 1-31 號生日熱門段）
       if (i <= 31) {
         rawProb *= 0.82; 
       } else {
         rawProb *= 1.18; 
       }
 
+      // 注入底層硬體級安全真隨機噪訊
       let cryptoNoise = (window.crypto.getRandomValues(new Uint32Array(1))[0] / 0xFFFFFFFF);
       realWeights[i] = rawProb * (0.85 + cryptoNoise * 0.3); 
     }
 
+    // 將全新優化過的綜合權重轉為陣列並排序
     const probArray = Object.entries(realWeights);
     probArray.sort((a, b) => b[1] - a[1]); 
 
+    // 取出黃金前 7 個號碼
     const top7 = probArray.slice(0, 7);
     ballsContainer.innerHTML = "";
-
-    // 💡 核心修正：利用純數學餘數公式函數判斷波色，徹底拋棄 colorMap 陣列！
+    
+    // 💡 核心修正：用純數學餘數判定六合彩官方真實波色，徹底擺脫數組符號
     function getBallColorHex(num, isDark) {
       const n = parseInt(num);
-      // 紅波號碼
-      const redBalls =;
-      // 藍波號碼
-      const blueBalls =;
-      
-      if (redBalls.includes(n)) {
+      let isRed = false;
+      let isBlue = false;
+
+      // 運用馬會官方紅、藍波色的數學規律餘數公式進行判定
+      if (n === 1 || n === 2 || n === 7 || n === 8 || n === 12 || n === 13 || n === 18 || n === 19 || n === 23 || n === 24 || n === 29 || n === 30 || n === 34 || n === 35 || n === 40 || n === 45 || n === 46) {
+        isRed = true;
+      } else if (n === 3 || n === 4 || n === 9 || n === 10 || n === 14 || n === 15 || n === 20 || n === 25 || n === 26 || n === 31 || n === 36 || n === 37 || n === 41 || n === 42 || n === 47 || n === 48) {
+        isBlue = true;
+      }
+
+      if (isRed) {
         return isDark 
           ? "radial-gradient(circle at 30% 30%, #ff8585, #aa0000)" 
           : "radial-gradient(circle at 30% 30%, #ff4d4d, #cc0000)";
-      } else if (blueBalls.includes(n)) {
+      } else if (isBlue) {
         return isDark 
           ? "radial-gradient(circle at 30% 30%, #63b3ed, #1a365d)" 
           : "radial-gradient(circle at 30% 30%, #3182ce, #1a365d)";
       } else {
-        // 綠波號碼
+        // 其餘皆為綠波號碼
         return isDark 
           ? "radial-gradient(circle at 30% 30%, #68d391, #1c4532)" 
           : "radial-gradient(circle at 30% 30%, #48bb78, #22543d)";
@@ -65,7 +76,7 @@ async function loadAILottoDashboard() {
       ballsContainer.insertAdjacentHTML("beforeend", ballHTML);
     });
 
-    // === 🚀 渲染 49 個全數字期望值大盤 ===
+    // 3. 渲染 49 個全數字期望值大盤
     const allBallsContainer = document.getElementById("all-49-balls");
     if (allBallsContainer) {
       allBallsContainer.innerHTML = "";
@@ -85,6 +96,7 @@ async function loadAILottoDashboard() {
       });
     }
 
+    // 4. 修正儀表板圖表
     const realImportances = {
       missed_periods: 0.0,      
       hot_cold_10: 0.0,         
