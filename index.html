@@ -38,7 +38,16 @@
         <div id="user-balls" class="balls-container" style="min-height: 85px; background: #f7fafc; border: 2px dashed #e2e8f0; border-radius: 12px; padding: 10px; align-items: center; justify-content: center;">
             <span id="user-hint" style="color: #a0aec0; font-size: 14px; font-weight: 500;">💡 目前尚未選碼，請在下方 49 碼大盤中點擊球體，即可在此處即時組裝你的自選組合！</span>
         </div>
-    
+            <!-- 📊 全新加入：自選組合實時勝率與打和回本率精算面板 -->
+        <div id="user-stats-panel" style="display: none; margin-top: 15px; padding: 12px 18px; background-color: #ebf8ff; border: 1px solid #bee3f8; border-radius: 8px; color: #2b6cb0; font-size: 13px; line-height: 1.6;">
+            <div style="font-weight: bold; font-size: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">📋 <span>本組自選 7 字複式系統大數據演算報告</span></div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                <div>🎯 <b>頭獎精準機率</b>：<span id="stat-jackpot">1 / 1,997,688</span></div>
+                <div>💰 <b>中獎回本率 (中3個字打和)</b>：<span id="stat-breakeven">--</span></div>
+                <div>📈 <b>組合總體期望回報率</b>：<span id="stat-ev">--</span></div>
+            </div>
+        </div>
+
 <!-- 🎰 全新加入：49 個全數字期望值大盤展示區 -->
     <div class="chart-section" style="border-top: 1px solid #eee; margin-top: 40px; padding-top: 20px;">
         <h3>📊 六合彩 49 號全數字期望值與冷熱即時大盤</h3>
