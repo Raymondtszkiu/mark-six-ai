@@ -47,7 +47,7 @@ async function loadAILottoDashboard() {
   }
 }
 
-// 🏆 核心互動渲染器：負責即時重繪球體狀態
+// 🏆 經 Review 優化的動態互動渲染器：即時同步上方主球的真實權重
 function renderDashboardUI() {
   const ballsContainer = document.getElementById("top-balls");
   const allBallsContainer = document.getElementById("all-49-balls");
@@ -57,19 +57,26 @@ function renderDashboardUI() {
   ballsContainer.innerHTML = "";
   allBallsContainer.innerHTML = "";
 
-  // 1. 渲染上方的 Top 7 號碼（可能包含用戶手動點選換進來的號碼）
+  // 1. 渲染上方的 Top 7 號碼：動態讀取該號碼在 globalAllSorted 裡的真實權重
   currentTop7.forEach((num) => {
     const ballColor = getBallColorHex(num, false);
     const formattedNum = String(num).padStart(2, '0');
+    
+    // 💡 核心改進：從全局排序陣列中，精準找出這顆球對應的權重百分比
+    const targetItem = globalAllSorted.find(([bNum]) => bNum === num);
+    const weightVal = targetItem ? (targetItem[1] * 100).toFixed(0) : "0";
+
     const ballHTML = `
       <div class="ball-wrapper" style="cursor: pointer;" onclick="removeBallFromTop('${num}')" title="點擊將此號碼移出主推組合">
         <div class="lotto-ball" style="background: ${ballColor};">${formattedNum}</div>
-        <div class="prob-label" style="color: #2b6cb0; font-weight: bold;">已選定 ❌</div>
+        <div class="prob-label" style="font-size: 11px; font-weight: bold; margin-top: 4px; color: #cc0000;">
+          權重: ${weightVal} <span style="font-size: 9px; font-weight: normal; color: #999;">❌</span>
+        </div>
       </div>`;
     ballsContainer.insertAdjacentHTML("beforeend", ballHTML);
   });
 
-  // 2. 渲染下方的 49 碼大盤（支援點擊互動）
+  // 2. 渲染下方的 49 碼大盤（保持不變）
   globalAllSorted.forEach(([num, prob], index) => {
     const ballColor = getBallColorHex(num, true);
     const formattedNum = String(num).padStart(2, '0');
@@ -88,6 +95,7 @@ function renderDashboardUI() {
     allBallsContainer.insertAdjacentHTML("beforeend", ballHTML);
   });
 }
+
 
 // 🖱️ 互動邏輯 A：點擊大盤球的切換行為
 function toggleBallSelection(num) {
