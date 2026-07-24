@@ -162,55 +162,60 @@ function renderDashboardUI() {
     } 
 
     // PART 4：渲染下方的 49 碼全數字冷熱即時大盤
-    displayArray.forEach(([num, prob]) => { 
-        const ballColor = getBallColorHex(num, true); 
-        const formattedNum = String(num).padStart(2, '0'); 
-        const isUserSelected = userSelected.includes(num); 
-        const isAiBigRec = aiBigTop7.includes(num); 
-        const isAiAllRec = aiAllTop7.includes(num); 
-        
-        let rawScore = rawJsonData && rawJsonData.number_probabilities[num] ? rawJsonData.number_probabilities[num] : 0.05; 
-        let missedPeriods = Math.floor((1 - rawScore) * 15) + (parseInt(num) % 4); 
-        let hotCold10 = Math.floor(rawScore * 30) % 5; 
-        let recentTrackStatus = hotCold10 > 2 ? "🔺 升" : "🔸 穩";
-        const weightVal = globalWeightsObj[num] || "12.2"; 
-        
-        let badgeText = '回報:' + weightVal; 
-        if (isUserSelected) badgeText = '★ 已揀'; 
-        else if (isAiBigRec && isAiAllRec) badgeText = '🤖 雙流派主推'; 
-        else if (isAiBigRec) badgeText = '🤖 大碼主推'; 
-        else if (isAiAllRec) badgeText = '🤖 全碼精選';
+    // 📌 修改 renderDashboardUI() 內部渲染 PART 4 的迴圈邏輯
+displayArray.forEach(([num, prob]) => { 
+    const ballColor = getBallColorHex(num, true); 
+    const formattedNum = String(num).padStart(2, '0'); 
+    const isUserSelected = userSelected.includes(num); 
+    const isAiBigRec = aiBigTop7.includes(num); 
+    const isAiAllRec = aiAllTop7.includes(num); 
+    const weightVal = globalWeightsObj[num] || "12.2"; 
 
-        const cardElement = document.createElement("div");
-        cardElement.className = "ball-wrapper";
-        cardElement.style.cursor = "pointer";
-        cardElement.style.border = isUserSelected ? "1px solid #3182ce" : (isAiBigRec || isAiAllRec ? "1px dashed #3182ce" : "1px dashed #cbd5e1");
-        cardElement.style.borderRadius = "12px";
-        cardElement.style.padding = "10px 5px";
-        cardElement.style.background = isUserSelected ? "#ebf8ff" : "#fff";
-        cardElement.style.transition = "all 0.2s";
+    // 1. 讀取 Python 生成的真實滾動數據
+    const rollingData = (rawJsonData && rawJsonData.rolling_features && rawJsonData.rolling_features[num]) || {};
+    const r10Pct = rollingData.r10 !== undefined ? (rollingData.r10 * 100).toFixed(0) : "0";
+    const r30Pct = rollingData.r30 !== undefined ? (rollingData.r30 * 100).toFixed(0) : "0";
+    const momentum = rollingData.momentum !== undefined ? rollingData.momentum : 1.0;
 
-        // 設定 data-info 供 CSS 黑色 Tooltip 讀取
-        cardElement.setAttribute('data-info', `🔮 號碼 ${formattedNum} 精密分析\n⚖️ 回報率：${weightVal}x\n⏱️ 盲門期數：${missedPeriods} 期\n🔥 近期旺弱：${hotCold10} 次\n📈 走勢預測：${recentTrackStatus}`);
+    // 2. 依據動量比值 M 判定狀態
+    let recentTrackStatus = "🔸 穩";
+    if (momentum >= 1.5) recentTrackStatus = "🔥 爆發變盤";
+    else if (momentum < 0.6) recentTrackStatus = "🔹 轉冷衰退";
 
-        cardElement.innerHTML = `
-            <div class="lotto-ball" style="width: 40px; height: 40px; font-size: 15px; margin: 0 auto; background: ${ballColor}; opacity: ${isUserSelected || isAiBigRec || isAiAllRec ? '1' : '0.85'}; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">${formattedNum}</div>
-            <div class="prob-label" style="font-size: 10px; font-weight: bold; margin-top: 4px; color: ${isUserSelected ? '#3182ce' : '#4a5568'}; line-height: 1.3;">
-                <div>${badgeText}</div>
-                <div style="color: #64748b; font-weight: normal; font-size: 9px;">⏱️漏:${missedPeriods}</div>
-                <div style="color: #e53e3e; font-weight: normal; font-size: 9px;">🔥熱:${hotCold10}</div>
-            </div>`;
+    let badgeText = '回報:' + weightVal; 
+    if (isUserSelected) badgeText = '★ 已揀'; 
+    else if (isAiBigRec && isAiAllRec) badgeText = '🤖 雙流派主推'; 
+    else if (isAiBigRec) badgeText = '🤖 大碼主推'; 
+    else if (isAiAllRec) badgeText = '🤖 全碼精選';
 
-        // 點擊事件：切換選號
-        cardElement.onclick = () => {
-            if (typeof toggleBallSelection === "function") {
-                toggleBallSelection(num);
-            }
-        };
+    const cardElement = document.createElement("div");
+    cardElement.className = "ball-wrapper";
+    cardElement.style.cursor = "pointer";
+    cardElement.style.border = isUserSelected ? "1px solid #3182ce" : (isAiBigRec || isAiAllRec ? "1px dashed #3182ce" : "1px dashed #cbd5e1");
+    cardElement.style.borderRadius = "12px";
+    cardElement.style.padding = "10px 5px";
+    cardElement.style.background = isUserSelected ? "#ebf8ff" : "#fff";
+    cardElement.style.transition = "all 0.2s";
 
-        allBallsContainer.appendChild(cardElement);
-    });
-}
+    // 3. 設定黑底 Tooltip 與卡片內數據
+    cardElement.setAttribute('data-info', `🔮 號碼 ${formattedNum} 滾動動量分析\n⚖️ 回報率：${weightVal}x\n🔥 近10期熱度：${r10Pct}%\n📊 近30期基線：${r30Pct}%\n📈 走勢預測：${recentTrackStatus} (M:${momentum})`);
+
+    cardElement.innerHTML = `
+        <div class="lotto-ball" style="width: 40px; height: 40px; font-size: 15px; margin: 0 auto; background: ${ballColor}; opacity: ${isUserSelected || isAiBigRec || isAiAllRec ? '1' : '0.85'}; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">${formattedNum}</div>
+        <div class="prob-label" style="font-size: 10px; font-weight: bold; margin-top: 4px; color: ${isUserSelected ? '#3182ce' : '#4a5568'}; line-height: 1.3;">
+            <div>${badgeText}</div>
+            <div style="color: #64748b; font-weight: normal; font-size: 9px;">10期:${r10Pct}%</div>
+            <div style="color: ${momentum >= 1.5 ? '#e53e3e' : '#3182ce'}; font-weight: bold; font-size: 9px;">${recentTrackStatus}</div>
+        </div>`;
+
+    cardElement.onclick = () => {
+        if (typeof toggleBallSelection === "function") {
+            toggleBallSelection(num);
+        }
+    };
+
+    allBallsContainer.appendChild(cardElement);
+});
 
 function changeDisplayOrder(mode) {
     currentSortMode = mode;
