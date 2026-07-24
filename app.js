@@ -162,60 +162,60 @@ function renderDashboardUI() {
     } 
 
     // PART 4：渲染下方的 49 碼全數字冷熱即時大盤
-    // 📌 修改 renderDashboardUI() 內部渲染 PART 4 的迴圈邏輯
-displayArray.forEach(([num, prob]) => { 
-    const ballColor = getBallColorHex(num, true); 
-    const formattedNum = String(num).padStart(2, '0'); 
-    const isUserSelected = userSelected.includes(num); 
-    const isAiBigRec = aiBigTop7.includes(num); 
-    const isAiAllRec = aiAllTop7.includes(num); 
-    const weightVal = globalWeightsObj[num] || "12.2"; 
+    displayArray.forEach(([num, prob]) => { 
+        const ballColor = getBallColorHex(num, true); 
+        const formattedNum = String(num).padStart(2, '0'); 
+        const isUserSelected = userSelected.includes(num); 
+        const isAiBigRec = aiBigTop7.includes(num); 
+        const isAiAllRec = aiAllTop7.includes(num); 
+        const weightVal = globalWeightsObj[num] || "12.2"; 
 
-    // 1. 讀取 Python 生成的真實滾動數據
-    const rollingData = (rawJsonData && rawJsonData.rolling_features && rawJsonData.rolling_features[num]) || {};
-    const r10Pct = rollingData.r10 !== undefined ? (rollingData.r10 * 100).toFixed(0) : "0";
-    const r30Pct = rollingData.r30 !== undefined ? (rollingData.r30 * 100).toFixed(0) : "0";
-    const momentum = rollingData.momentum !== undefined ? rollingData.momentum : 1.0;
+        // 1. 讀取 Python 生成的真實滾動數據
+        const rollingData = (rawJsonData && rawJsonData.rolling_features && rawJsonData.rolling_features[num]) || {};
+        const r10Pct = rollingData.r10 !== undefined ? (rollingData.r10 * 100).toFixed(0) : "0";
+        const r30Pct = rollingData.r30 !== undefined ? (rollingData.r30 * 100).toFixed(0) : "0";
+        const momentum = rollingData.momentum !== undefined ? rollingData.momentum : 1.0;
 
-    // 2. 依據動量比值 M 判定狀態
-    let recentTrackStatus = "🔸 穩";
-    if (momentum >= 1.5) recentTrackStatus = "🔥 爆發變盤";
-    else if (momentum < 0.6) recentTrackStatus = "🔹 轉冷衰退";
+        // 2. 依據動量比值 M 判定狀態
+        let recentTrackStatus = "🔸 穩";
+        if (momentum >= 1.5) recentTrackStatus = "🔥 爆發變盤";
+        else if (momentum < 0.6) recentTrackStatus = "🔹 轉冷衰退";
 
-    let badgeText = '回報:' + weightVal; 
-    if (isUserSelected) badgeText = '★ 已揀'; 
-    else if (isAiBigRec && isAiAllRec) badgeText = '🤖 雙流派主推'; 
-    else if (isAiBigRec) badgeText = '🤖 大碼主推'; 
-    else if (isAiAllRec) badgeText = '🤖 全碼精選';
+        let badgeText = '回報:' + weightVal; 
+        if (isUserSelected) badgeText = '★ 已揀'; 
+        else if (isAiBigRec && isAiAllRec) badgeText = '🤖 雙流派主推'; 
+        else if (isAiBigRec) badgeText = '🤖 大碼主推'; 
+        else if (isAiAllRec) badgeText = '🤖 全碼精選';
 
-    const cardElement = document.createElement("div");
-    cardElement.className = "ball-wrapper";
-    cardElement.style.cursor = "pointer";
-    cardElement.style.border = isUserSelected ? "1px solid #3182ce" : (isAiBigRec || isAiAllRec ? "1px dashed #3182ce" : "1px dashed #cbd5e1");
-    cardElement.style.borderRadius = "12px";
-    cardElement.style.padding = "10px 5px";
-    cardElement.style.background = isUserSelected ? "#ebf8ff" : "#fff";
-    cardElement.style.transition = "all 0.2s";
+        const cardElement = document.createElement("div");
+        cardElement.className = "ball-wrapper";
+        cardElement.style.cursor = "pointer";
+        cardElement.style.border = isUserSelected ? "1px solid #3182ce" : (isAiBigRec || isAiAllRec ? "1px dashed #3182ce" : "1px dashed #cbd5e1");
+        cardElement.style.borderRadius = "12px";
+        cardElement.style.padding = "10px 5px";
+        cardElement.style.background = isUserSelected ? "#ebf8ff" : "#fff";
+        cardElement.style.transition = "all 0.2s";
 
-    // 3. 設定黑底 Tooltip 與卡片內數據
-    cardElement.setAttribute('data-info', `🔮 號碼 ${formattedNum} 滾動動量分析\n⚖️ 回報率：${weightVal}x\n🔥 近10期熱度：${r10Pct}%\n📊 近30期基線：${r30Pct}%\n📈 走勢預測：${recentTrackStatus} (M:${momentum})`);
+        // 3. 設定黑底 Tooltip 與卡片內數據
+        cardElement.setAttribute('data-info', `🔮 號碼 ${formattedNum} 滾動動量分析\n⚖️ 回報率：${weightVal}x\n🔥 近10期熱度：${r10Pct}%\n📊 近30期基線：${r30Pct}%\n📈 走勢預測：${recentTrackStatus} (M:${momentum})`);
 
-    cardElement.innerHTML = `
-        <div class="lotto-ball" style="width: 40px; height: 40px; font-size: 15px; margin: 0 auto; background: ${ballColor}; opacity: ${isUserSelected || isAiBigRec || isAiAllRec ? '1' : '0.85'}; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">${formattedNum}</div>
-        <div class="prob-label" style="font-size: 10px; font-weight: bold; margin-top: 4px; color: ${isUserSelected ? '#3182ce' : '#4a5568'}; line-height: 1.3;">
-            <div>${badgeText}</div>
-            <div style="color: #64748b; font-weight: normal; font-size: 9px;">10期:${r10Pct}%</div>
-            <div style="color: ${momentum >= 1.5 ? '#e53e3e' : '#3182ce'}; font-weight: bold; font-size: 9px;">${recentTrackStatus}</div>
-        </div>`;
+        cardElement.innerHTML = `
+            <div class="lotto-ball" style="width: 40px; height: 40px; font-size: 15px; margin: 0 auto; background: ${ballColor}; opacity: ${isUserSelected || isAiBigRec || isAiAllRec ? '1' : '0.85'}; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">${formattedNum}</div>
+            <div class="prob-label" style="font-size: 10px; font-weight: bold; margin-top: 4px; color: ${isUserSelected ? '#3182ce' : '#4a5568'}; line-height: 1.3;">
+                <div>${badgeText}</div>
+                <div style="color: #64748b; font-weight: normal; font-size: 9px;">10期:${r10Pct}%</div>
+                <div style="color: ${momentum >= 1.5 ? '#e53e3e' : '#3182ce'}; font-weight: bold; font-size: 9px;">${recentTrackStatus}</div>
+            </div>`;
 
-    cardElement.onclick = () => {
-        if (typeof toggleBallSelection === "function") {
-            toggleBallSelection(num);
-        }
-    };
+        cardElement.onclick = () => {
+            if (typeof toggleBallSelection === "function") {
+                toggleBallSelection(num);
+            }
+        };
 
-    allBallsContainer.appendChild(cardElement);
-});
+        allBallsContainer.appendChild(cardElement);
+    });
+} // 🚀 補回此處漏掉的關閉括號
 
 function changeDisplayOrder(mode) {
     currentSortMode = mode;
