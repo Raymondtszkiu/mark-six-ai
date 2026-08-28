@@ -53,10 +53,38 @@ async function loadAILottoDashboard() {
             if (!response.ok) throw new Error("找不到預測數據檔案。"); 
             rawJsonData = await response.json(); 
         } 
-        const localTime = new Date(rawJsonData.last_updated).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" }); 
-        if (metaElement) { 
-            metaElement.innerHTML = `數據更新時間：${localTime} • ⚖️ 混合決策引擎：<b>📈 嚴格歸一化與 EV 最大化模式 (真實歷史特徵)</b>`; 
+        
+        const updateDate = new Date(rawJsonData.last_updated);
+        const localTime = updateDate.toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" }); 
+        
+        const now = new Date();
+        const diffHours = (now - updateDate) / (1000 * 60 * 60);
+        
+        // 設定今日夜晚 21:30 的死線邊界 (馬會開獎時間)
+        const todayDrawTime = new Date();
+        todayDrawTime.setHours(21, 30, 0, 0);
+
+        let alertBadge = "";
+        
+        // 🔴 情境 1：硬性超時 (GitHub Action 炒咗 / 爬蟲 API 死咗)
+        if (diffHours > 24) {
+            alertBadge = `<br><span style="display: inline-block; margin-top: 5px; padding: 4px 8px; background-color: #fff5f5; color: #e53e3e; border: 1px solid #feb2b2; border-radius: 6px; font-weight: bold; font-size: 13px;">⚠️ 系統提示：目前顯示為 ${diffHours.toFixed(0)} 小時前之歷史數據</span>`;
+            setTimeout(() => {
+                alert(`⚠️ 系統警告\n\n偵測到最新數據爬取失敗！\n目前大盤顯示為 ${diffHours.toFixed(0)} 小時前之歷史快取數據。`);
+            }, 500);
         } 
+        // 🟠 情境 2：開獎空窗期 (過咗 21:30，但 AI 仲未喺 22:15 自動更新)
+        else if (now >= todayDrawTime && updateDate < todayDrawTime) {
+            alertBadge = `<br><span style="display: inline-block; margin-top: 5px; padding: 4px 8px; background-color: #fffaf0; color: #dd6b20; border: 1px solid #fbd38d; border-radius: 6px; font-weight: bold; font-size: 13px;">⏳ 數據更新中：等待 22:15 系統排程擷取最新結果</span>`;
+            setTimeout(() => {
+                alert(`⏳ 更新空窗期提示\n\n馬會啱啱已經開獎！\nAI 系統排程將於 22:15 自動擷取最新結果，目前大盤仍為「上一期」數據。`);
+            }, 500);
+        }
+
+        if (metaElement) { 
+            metaElement.innerHTML = `數據更新時間：${localTime} • ⚖️ 混合決策引擎：<b>📈 嚴格歸一化與 EV 最大化模式</b>${alertBadge}`; 
+        } 
+        
         let realWeights = {}; 
         for (let i = 1; i <= 49; i++) { 
             let rawProb = rawJsonData.number_probabilities[String(i)] || (7 / 49); 
@@ -67,10 +95,10 @@ async function loadAILottoDashboard() {
     } catch (error) { 
         console.error("前端載入失敗:", error); 
         if (metaElement) { 
-            metaElement.innerHTML = `<span style="color:red;">⚠️ 載入失敗: ${error.message}</span>`; 
+            metaElement.innerHTML = `<span style="color:red; font-weight: bold;">⚠️ 載入失敗: ${error.message}</span>`; 
         } 
     } 
-} 
+}
 
 function rerollWithNoise() { 
     if (!rawJsonData) return; 
