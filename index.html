@@ -1,205 +1,106 @@
-
 <!DOCTYPE html>
-<html lang="zh-Hant-HK">
+<html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>香港六合彩 AI 預測儀表板 - 最強拼圖版</title>
+    <title>香港六合彩 AI 預測儀表板 v4.0.0</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #f5f7fb;
-            color: #333;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-        }
-        h1 {
-            text-align: center;
-            color: #1a365d;
-            margin-bottom: 5px;
-        }
-        .version-badge {
-            display: inline-block;
-            background-color: #e2e8f0;
-            color: #4a5568;
-            font-size: 11px;
-            font-weight: bold;
-            padding: 3px 8px;
-            border-radius: 20px;
-            vertical-align: middle;
-            margin-left: 8px;
-            line-height: 1.2;
-        }
-        .meta-info {
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 15px;
-        }
-        .balls-container {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-        .ball-wrapper {
-            text-align: center;
-        }
-        .lotto-ball {
-            width: 55px;
-            height: 55px;
-            border-radius: 50%;
-            color: white;
-            font-size: 20px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-        }
-        .prob-label {
-            font-size: 12px;
-            color: #777;
-            margin-top: 5px;
-        }
-        .chart-section {
-            margin-top: 30px;
-            padding-top: 20px;
-        }
-
-        /* =======================================================
-           🎨 終極完美還原：滑鼠移上去（Hover）浮現黑底白字實時數據提示框
-           ======================================================= */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f7fafc; color: #2d3748; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        h1 { font-size: 24px; color: #1a365d; text-align: center; margin-bottom: 5px; }
+        .meta { text-align: center; font-size: 13px; color: #718096; margin-bottom: 25px; }
+        .chart-section { border-top: 1px solid #e2e8f0; margin-top: 30px; padding: 25px; background: #ffffff; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); display: block; clear: both; overflow: visible; position: relative; }
+        .section-title { font-size: 16px; font-weight: bold; color: #2b6cb0; margin-bottom: 15px; }
+        .balls-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+        .ball-wrapper { text-align: center; position: relative; }
+        .lotto-ball { width: 42px; height: 42px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
         
-        /* 1. 設定 PART 3 大盤容器內的卡片具備相對定位 */
-      #all-49-balls > div {
-            position: relative;
-            cursor: pointer !important;
-            transition: transform 0.2s ease-in-out;
-        }
-
-        #all-49-balls > div:hover {
-            transform: translateY(-5px) scale(1.04);
-            z-index: 999999;
-        }
-
-        /* 🤖 提示框本體：上下左右完全由 var(--變數) 動態現場指揮 */
-        #all-49-balls > div:hover::after {
+        /* 🛰️ 360度空間防撞 Tooltip 核心設定 */
+        .ball-wrapper:hover::after {
             content: attr(data-info);
             position: absolute;
-            
-            /* 💡 上下位置動態控制 */
-            top: var(--tooltip-top, auto);
-            bottom: var(--tooltip-bottom, 115%); 
-            
-            /* 💡 左右位置動態控制 */
             left: var(--tooltip-left, 50%);
             right: var(--tooltip-right, auto);
+            top: var(--tooltip-top, auto);
+            bottom: var(--tooltip-bottom, 115%);
             transform: var(--tooltip-transform, translateX(-50%));
-            
-            background-color: rgba(20, 24, 33, 0.98);
-            color: #ffffff;
+            background: rgba(20, 24, 33, 0.98);
+            color: #fff;
             padding: 12px 16px;
+            border-radius: 8px;
             font-size: 12px;
-            font-weight: 500;
-            line-height: 1.6;
-            border-radius: 10px;
             white-space: pre-line;
             text-align: left;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            z-index: 9999999;
+            z-index: 99999;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
             pointer-events: none;
-            width: max-content;
+            line-height: 1.5;
+            min-width: 200px;
         }
-
-        /* 🤖 小箭頭本體：方向與位置同樣由 var(--變數) 現場對位 */
-        #all-49-balls > div:hover::before {
-            content: "";
+        .ball-wrapper:hover::before {
+            content: '';
             position: absolute;
-            
-            /* 💡 上下與顏色（方向）動態控制 */
-            top: var(--arrow-top, auto);
-            bottom: var(--arrow-bottom, 103%);
-            border-color: var(--arrow-color, rgba(20, 24, 33, 0.98) transparent transparent transparent);
-            
-            /* 💡 左右位置動態控制 */
             left: var(--arrow-left, 50%);
             right: var(--arrow-right, auto);
+            top: var(--arrow-top, auto);
+            bottom: var(--arrow-bottom, -12px);
             transform: var(--arrow-transform, translateX(-50%));
-            
-            border-width: 7px;
+            border-width: 6px;
             border-style: solid;
-            z-index: 9999999;
+            border-color: var(--arrow-color, rgba(20, 24, 33, 0.98) transparent transparent transparent);
+            z-index: 100000;
             pointer-events: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🗳️ 香港六合彩 AI 預測儀表板<span class="version-badge">v4.1.0</span></h1>
-        <div id="meta-info" class="meta-info">正在動態載入 AI 數據包...</div>
+        <h1>🇭🇰 香港六合彩 AI 預測儀表板 <span style="font-size: 12px; background: #ebf8ff; color: #3182ce; padding: 3px 8px; border-radius: 6px; vertical-align: middle;">v4.0.0</span></h1>
+        <div class="meta" id="meta-info">數據載入中...</div>
 
-        <!-- 🎛️ 控制面板：手動加噪與還原固定數據按鈕 -->
-        <div style="text-align: center; margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 20px; display: flex; justify-content: center; gap: 12px;">
-            <button id="btn-reroll" onclick="rerollWithNoise()" style="cursor: pointer; padding: 8px 16px; font-weight: bold; border-radius: 8px; border: none; background-color: #805ad5; color: white; transition: all 0.2s;">🎲 手動注入量子噪訊抽樣</button>
-            <button id="btn-reset-fixed" onclick="loadAILottoDashboard()" style="cursor: pointer; padding: 8px 16px; font-weight: bold; border-radius: 8px; border: 1px solid #cbd5e1; background-color: #f7fafc; color: #4a5568; transition: all 0.2s;">📊 當期 AI 實時大盤</button>
-        </div>
-        <!-- 🔴 最新一期官方開獎結果對照看板 -->
+        <!-- 🔴 最新一期官方開獎結果核對看板 -->
         <div id="latest-draw-banner" style="background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%); border: 1px solid #feb2b2; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(229, 62, 62, 0.08);">
             <div style="font-weight: bold; color: #c53030; font-size: 15px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
-        <span>🏆 最新官方開獎結果核對</span>
-        <span id="latest-draw-period" style="font-size: 13px; font-weight: normal; color: #742a2a;">載入中...</span>
+                <span>🏆 最新官方開獎結果核對</span>
+                <span id="latest-draw-period" style="font-size: 13px; font-weight: normal; color: #742a2a;">載入中...</span>
+            </div>
+            <div id="latest-draw-balls" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;"></div>
         </div>
-            <div id="latest-draw-balls" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-        <!-- JS 動態渲染波球 -->
+
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: center;">
+            <button id="btn-reset-fixed" onclick="loadAILottoDashboard()" style="cursor:pointer;">📈 嚴格歸一化與 EV 最大化模式</button>
+            <button id="btn-reroll" onclick="rerollWithNoise()" style="cursor:pointer;">🎲 量子隨機噪訊抽樣模式</button>
+        </div>
+
+        <div class="section-title">🔮 PART 1：AI 評估黃金 7 字複式組合 (大過 31 號碼高期望值)</div>
+        <div class="balls-row" id="top-balls" style="margin-bottom: 25px;"></div>
+
+        <div class="section-title">🔮 PART 1.5：AI 評估黃金 7 字複式組合 (全 1-49 號碼)</div>
+        <div class="balls-row" id="all-lotto-balls" style="margin-bottom: 25px;"></div>
+
+        <div class="section-title">🛒 PART 2：你嘅專屬自選 7 字複式組合 (點擊下方大盤調配)</div>
+        <div class="balls-row" id="user-balls" style="min-height: 60px; padding: 15px; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; margin-bottom: 25px;">
+            <span id="user-hint" style="color: #a0aec0; font-size: 14px; font-weight: 500;">💡 未選號碼，請喺下面 PART 3 大盤點擊號碼球，即可在此處即時組裝你嘅心水防線！</span>
+        </div>
+
+        <div id="user-stats-panel" style="display: none; background: #fff5f5; border: 1px solid #feb2b2; padding: 20px; border-radius: 12px; margin-bottom: 25px;">
+            <div class="section-title" style="color: #c53030; margin-bottom: 10px;">📋 本組自選 7 字複式系統大數據演算報告</div>
+            <div style="font-size: 13px; color: #4a5568; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;">
+                <div>🎯 頭獎精準機率：<b id="stat-jackpot">-</b></div>
+                <div>💰 中獎回報率：<span id="stat-breakeven">-</span></div>
+                <div>📈 組合總體期望回報率：<span id="stat-ev">-</span></div>
             </div>
         </div>
-        <!-- 🥇 PART 1：純大號防撞列 -->
-        <h3>🔮 PART 1：AI 評估黃金 7 字複式組合 (大過 31 號碼高期望值)</h3>
-        <div id="top-balls" class="balls-container"></div>
 
-        <!-- 🥈 PART 2：全體 1-49 號海選列 -->
-        <h3 style="border-top: 1px dashed #e2e8f0; padding-top: 15px; margin-top: 15px;">🔮 PART 2：AI 評估黃金 7 字複式組合 (全 1-49 號碼)</h3>
-        <div id="all-lotto-balls" class="balls-container"></div>
-
-        <!-- 🛒 PART 3：User 專屬互動自選列 -->
-        <div style="border-top: 1px solid #eee; margin-top: 25px; padding-top: 20px;">
-            <h3 style="color: #2b6cb0;">🛒 PART 3：你嘅專屬自選 7 字複式組合 (點擊下方大盤調配)</h3>
-            <div id="user-balls" class="balls-container" style="min-height: 85px; background: #f7fafc; border: 2px dashed #e2e8f0; border-radius: 12px; padding: 10px; align-items: center; justify-content: center; display: flex; flex-wrap: wrap; gap: 15px;">
-                <span id="user-hint" style="color: #a0aec0; font-size: 14px; font-weight: 500;">💡 未選號碼，請喺下面 PART 3 大盤點擊號碼球，即可在此處即時組裝你嘅心水打和防線！</span>
-            </div>
-
-            <!-- 自選大數據精算面板 -->
-            <div id="user-stats-panel" style="display: none; margin-top: 15px; padding: 12px 18px; background-color: #ebf8ff; border: 1px solid #bee3f8; border-radius: 8px; color: #2b6cb0; font-size: 13px; line-height: 1.6;">
-                <div style="font-weight: bold; font-size: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">📋 <span>本組自選 7 字複式系統大數據演算報告</span></div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-                    <div>🎯 <b>頭獎精準機率</b>：<span id="stat-jackpot">1 / 1,997,688</span></div>
-                    <div>💰 <b>中獎回本率 (中3個字打和)</b>：<span id="stat-breakeven">--</span></div>
-                    <div>📈 <b>組合總體期望回報率</b>：<span id="stat-ev">--</span></div>
+        <div class="chart-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div class="section-title" style="margin: 0;">📊 PART 3：六合彩 49 號全數字期望值與冷熱即時大盤</div>
+                <div>
+                    <button id="btn-sort-weight" onclick="changeDisplayOrder('weight')" style="padding: 6px 12px; font-size: 12px; background: #3182ce; color: white; border: none; border-radius: 6px; cursor: pointer;">🔥 依獨得回報率排列</button>
+                    <button id="btn-sort-number" onclick="changeDisplayOrder('number')" style="padding: 6px 12px; font-size: 12px; background: white; color: #4a5568; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer;">🔢 依號碼波色順序 (1-49)</button>
                 </div>
             </div>
-        </div>
-
-        <!-- 📊 PART 4：49 碼全數字冷熱即時大盤 -->
-        <div class="chart-section" style="border-top: 1px solid #e2e8f0; margin-top: 30px; padding: 25px; background: #ffffff; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); display: block; clear: both; overflow: visible;">
-            <h3>📊 PART 4：六合彩 49 號全數字期望值與冷熱即時大盤</h3>
-            <div style="margin-bottom: 15px; display: flex; gap: 10px;">
-                <button id="btn-sort-weight" onclick="changeDisplayOrder('weight')" style="cursor: pointer; padding: 6px 12px; font-size: 13px; font-weight: bold; border-radius: 6px; border: 1px solid #3182ce; background-color: #3182ce; color: white; transition: all 0.2s;">🔥 依獨得回報率排列</button>
-                <button id="btn-sort-number" onclick="changeDisplayOrder('number')" style="cursor: pointer; padding: 6px 12px; font-size: 13px; font-weight: bold; border-radius: 6px; border: 1px solid #cbd5e1; background-color: white; color: #4a5568; transition: all 0.2s;">🔢 依號碼波色順序 (1-49)</button>
-            </div>
-            <p style="font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.6;">
-                💡 <b>港式投注攻略提示</b>：下面大盤已經幫你列出全港 49 個號碼球嘅即時期望值。你可以一鍵切換排列模式，直接喺球體下面睇到最真實嘅 <b>⏱️ 盲門期數</b>同 <b>🔥 近期旺弱</b>。
-            </p>
-            <div id="all-49-balls" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); gap: 20px 12px; margin-bottom: 30px; width: 100%; clear: both;"></div>
+            <div class="balls-row" id="all-49-balls"></div>
         </div>
     </div>
     <script src="app.js"></script>
