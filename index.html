@@ -145,7 +145,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🗳️ 香港六合彩 AI 預測儀表板<span class="version-badge">v4.0.1</span></h1>
+        <h1>🗳️ 香港六合彩 AI 預測儀表板<span class="version-badge">v4.1.0</span></h1>
         <div id="meta-info" class="meta-info">正在動態載入 AI 數據包...</div>
 
         <!-- 🎛️ 控制面板：手動加噪與還原固定數據按鈕 -->
@@ -153,7 +153,16 @@
             <button id="btn-reroll" onclick="rerollWithNoise()" style="cursor: pointer; padding: 8px 16px; font-weight: bold; border-radius: 8px; border: none; background-color: #805ad5; color: white; transition: all 0.2s;">🎲 手動注入量子噪訊抽樣</button>
             <button id="btn-reset-fixed" onclick="loadAILottoDashboard()" style="cursor: pointer; padding: 8px 16px; font-weight: bold; border-radius: 8px; border: 1px solid #cbd5e1; background-color: #f7fafc; color: #4a5568; transition: all 0.2s;">📊 當期 AI 實時大盤</button>
         </div>
-
+        <!-- 🔴 最新一期官方開獎結果對照看板 -->
+        <div id="latest-draw-banner" style="background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%); border: 1px solid #feb2b2; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(229, 62, 62, 0.08);">
+            <div style="font-weight: bold; color: #c53030; font-size: 15px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+        <span>🏆 最新官方開獎結果核對</span>
+        <span id="latest-draw-period" style="font-size: 13px; font-weight: normal; color: #742a2a;">載入中...</span>
+        </div>
+            <div id="latest-draw-balls" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <!-- JS 動態渲染波球 -->
+            </div>
+        </div>
         <!-- 🥇 PART 1：純大號防撞列 -->
         <h3>🔮 PART 1：AI 評估黃金 7 字複式組合 (大過 31 號碼高期望值)</h3>
         <div id="top-balls" class="balls-container"></div>
