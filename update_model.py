@@ -1,84 +1,93 @@
 import sys
 import json
 import requests
-import re
 import numpy as np
-from bs4 import BeautifulSoup
 
 MIN_NUM = 1
 MAX_NUM = 49
 
 def fetch_and_clean_data():
-    # 採用具備歷史開獎數據的靜態 HTML 網頁作為資料源
-    TARGET_URL = "https://www.lotto-8.com/listltohk.asp" 
+    # 馬會官方 GraphQL Endpoint (精準對應你截圖右側的請求網址)
+    TARGET_URL = "https://info.cld.hkjc.com/graphql/base/"
+    
+    # 構造 GraphQL Query (拉取最近開獎結果，足夠覆蓋歷史數據)
+    payload = {
+        "query": """
+            query {
+              lotteryDraws(lottoType: "MK6", pageSize: 200) {
+                id
+                drawDate
+                drawResult {
+                  drawNo
+                  xDrawNo
+                }
+              }
+            }
+        """
+    }
+    
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        "Origin": "https://bet.hkjc.com",
+        "Referer": "https://bet.hkjc.com/"
     }
     
     try:
-        response = requests.get(TARGET_URL, headers=headers, timeout=15)
+        response = requests.post(TARGET_URL, json=payload, headers=headers, timeout=15)
         response.raise_for_status()
+        result = response.json()
         
-        # 強制指定編碼以避免中文亂碼
-        response.encoding = 'utf-8' 
-        soup = BeautifulSoup(response.text, "html.parser")
-        
+        draws_data = result.get("data", {}).get("lotteryDraws", [])
+        if not draws_data:
+            raise ValueError("GraphQL 回傳的 lotteryDraws 陣列為空。")
+            
         cleaned_draws = []
-        
-        # 尋找所有表格列 (tr)
-        rows = soup.find_all("tr")
-        for row in rows:
-            # 提取該列內的所有文字，以空格分隔
-            text_content = row.get_text(separator=" ", strip=True)
-            
-            # 使用 Regex 捕捉所有獨立的數字片段
-            numbers = re.findall(r'\b([0-9]{1,2})\b', text_content)
-            
-            # 嚴格驗證：必須落在 1-49 區間
-            valid_nums = [int(n) for n in numbers if MIN_NUM <= int(n) <= MAX_NUM]
-            
-            # 去除重複項，並確認是否剛好為 7 個號碼 (6 正碼 + 1 特碼)
-            unique_nums = list(dict.fromkeys(valid_nums))
-            if len(unique_nums) == 7:
-                cleaned_draws.append(unique_nums)
+        for draw in draws_data:
+            res = draw.get("drawResult")
+            if not res:
+                continue # 略過尚未開彩的期數
                 
-        if not cleaned_draws:
-            raise ValueError("無法從 DOM 中解析出有效的 7 碼組合，網頁結構可能已大幅變更。")
+            regular_nums = res.get("drawNo", [])
+            special_num = res.get("xDrawNo")
             
-        # 將最新的期數排在最後面 (反轉陣列)
+            if len(regular_nums) == 6 and special_num is not None:
+                # 組合成完整的 7 碼陣列 (6正碼 + 1特碼)
+                full_draw = [int(n) for n in regular_nums] + [int(special_num)]
+                # 嚴格驗證數字範圍
+                if all(MIN_NUM <= n <= MAX_NUM for n in full_draw):
+                    cleaned_draws.append(full_draw)
+                    
+        if not cleaned_draws:
+            raise ValueError("無法從 GraphQL JSON 中解析出有效的開獎組合。")
+            
+        # 馬會 API 通常回傳由新到舊，反轉陣列讓舊到新排列供演算使用
         return cleaned_draws[::-1]
         
     except Exception as e:
-        print(f"❌ 網頁爬取與解析失敗: {e}")
-        sys.exit(1)  # 觸發 Exit Code 1，強制阻斷 GitHub Actions 部署，防止假數據覆蓋
+        print(f"❌ 馬會官方 API 擷取失敗: {e}")
+        sys.exit(1)
 
 def generate_calibrated_ev_matrix(draws):
-    # 1. 根據爬取到的真實歷史開出次數計算基礎機率 (打破機率全部相同的僵局)
     counts = np.zeros(MAX_NUM)
     for d in draws:
         for num in d:
             if MIN_NUM <= num <= MAX_NUM:
                 counts[num - 1] += 1
                 
-    # Laplace 平滑處理 (避免歷史從未開出的號碼機率變 0)
     raw_freq = (counts + 1) / (len(draws) + MAX_NUM)
-    
-    # 2. EV 策略加權：提高 32-49 號碼權重 (1.25x) 以避開生日號碼 (1-31) 撞號獎金稀釋
     ev_weights = np.where(np.arange(1, MAX_NUM + 1) > 31, 1.25, 0.8)
     raw_ev_probs = raw_freq * ev_weights
-    
-    # 3. 嚴格歸一化約束：確保 49 個號碼加總機率嚴格等於 7.0
     calibrated_probs = (raw_ev_probs / raw_ev_probs.sum()) * 7.0
     return calibrated_probs
 
 def main():
-    print("🔄 開始爬取最新開獎數據...")
+    print("🔄 開始透過馬會官方 GraphQL API 同步最新開獎數據...")
     draws = fetch_and_clean_data()
-    print(f"✅ 成功獲取 {len(draws)} 期真實歷史數據！")
+    print(f"✅ 成功獲取 {len(draws)} 期官方真實歷史數據！")
     
     probs = generate_calibrated_ev_matrix(draws)
     
-    # 計算真實歷史滾動特徵
     rolling_output = {}
     for num in range(MIN_NUM, MAX_NUM + 1):
         recent_10 = draws[-10:] if len(draws) >= 10 else draws
@@ -89,7 +98,6 @@ def main():
         r20 = sum(1 for d in recent_20 if num in d) / (len(recent_20) or 1)
         r30 = sum(1 for d in recent_30 if num in d) / (len(recent_30) or 1)
         
-        # 掃描真實盲門期數 (從最新一期往回推)
         missed = 0
         for d in reversed(draws):
             if num in d:
@@ -120,7 +128,7 @@ def main():
     with open("prediction_result.json", "w", encoding="utf-8") as f:
         json.dump(output_data, f, ensure_ascii=False, indent=2)
         
-    print("🎉 預測更新成功！真實特徵已成功寫入 prediction_result.json")
+    print("🎉 預測更新成功！官方數據已成功寫入 prediction_result.json")
 
 if __name__ == "__main__":
     main()
