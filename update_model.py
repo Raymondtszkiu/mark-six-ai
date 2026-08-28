@@ -7,65 +7,36 @@ MIN_NUM = 1
 MAX_NUM = 49
 
 def fetch_and_clean_data():
-    # 馬會官方 GraphQL Endpoint (精準對應你截圖右側的請求網址)
-    TARGET_URL = "https://info.cld.hkjc.com/graphql/base/"
-    
-    # 構造 GraphQL Query (拉取最近開獎結果，足夠覆蓋歷史數據)
-    payload = {
-        "query": """
-            query {
-              lotteryDraws(lottoType: "MK6", pageSize: 200) {
-                id
-                drawDate
-                drawResult {
-                  drawNo
-                  xDrawNo
-                }
-              }
-            }
-        """
-    }
+    # 使用穩定維護的香港六合彩開源歷史數據 JSON 端點
+    TARGET_URL = "https://raw.githubusercontent.com/thecalvin/hk-mark-six-data/master/marksix.json"
     
     headers = {
-        "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-        "Origin": "https://bet.hkjc.com",
-        "Referer": "https://bet.hkjc.com/"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
     }
     
     try:
-        response = requests.post(TARGET_URL, json=payload, headers=headers, timeout=15)
+        response = requests.get(TARGET_URL, headers=headers, timeout=15)
         response.raise_for_status()
-        result = response.json()
+        draws_data = response.json()
         
-        draws_data = result.get("data", {}).get("lotteryDraws", [])
-        if not draws_data:
-            raise ValueError("GraphQL 回傳的 lotteryDraws 陣列為空。")
-            
         cleaned_draws = []
         for draw in draws_data:
-            res = draw.get("drawResult")
-            if not res:
-                continue # 略過尚未開彩的期數
-                
-            regular_nums = res.get("drawNo", [])
-            special_num = res.get("xDrawNo")
+            # 兼容不同的 JSON 欄位命名格式 (numbers 或 drawNo)
+            nums = draw.get("numbers") or draw.get("drawNo") or []
+            special = draw.get("special") or draw.get("xDrawNo")
             
-            if len(regular_nums) == 6 and special_num is not None:
-                # 組合成完整的 7 碼陣列 (6正碼 + 1特碼)
-                full_draw = [int(n) for n in regular_nums] + [int(special_num)]
-                # 嚴格驗證數字範圍
+            if len(nums) >= 6 and special is not None:
+                full_draw = [int(n) for n in nums[:6]] + [int(special)]
                 if all(MIN_NUM <= n <= MAX_NUM for n in full_draw):
                     cleaned_draws.append(full_draw)
                     
         if not cleaned_draws:
-            raise ValueError("無法從 GraphQL JSON 中解析出有效的開獎組合。")
+            raise ValueError("無法從遠端 JSON 中解析出有效的開獎組合。")
             
-        # 馬會 API 通常回傳由新到舊，反轉陣列讓舊到新排列供演算使用
-        return cleaned_draws[::-1]
+        return cleaned_draws
         
     except Exception as e:
-        print(f"❌ 馬會官方 API 擷取失敗: {e}")
+        print(f"❌ 數據擷取失敗: {e}")
         sys.exit(1)
 
 def generate_calibrated_ev_matrix(draws):
@@ -82,9 +53,9 @@ def generate_calibrated_ev_matrix(draws):
     return calibrated_probs
 
 def main():
-    print("🔄 開始透過馬會官方 GraphQL API 同步最新開獎數據...")
+    print("🔄 開始同步歷史開獎數據...")
     draws = fetch_and_clean_data()
-    print(f"✅ 成功獲取 {len(draws)} 期官方真實歷史數據！")
+    print(f"✅ 成功獲取 {len(draws)} 期真實歷史數據！")
     
     probs = generate_calibrated_ev_matrix(draws)
     
@@ -128,7 +99,7 @@ def main():
     with open("prediction_result.json", "w", encoding="utf-8") as f:
         json.dump(output_data, f, ensure_ascii=False, indent=2)
         
-    print("🎉 預測更新成功！官方數據已成功寫入 prediction_result.json")
+    print("🎉 預測更新成功！數據已成功寫入 prediction_result.json")
 
 if __name__ == "__main__":
     main()
