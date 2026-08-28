@@ -1,15 +1,15 @@
 import sys
 import json
 import requests
+import re
 import numpy as np
+from bs4 import BeautifulSoup
 
 MIN_NUM = 1
 MAX_NUM = 49
 
 def fetch_and_clean_data():
-    # 使用穩定維護的香港六合彩開源歷史數據 JSON 端點
-    TARGET_URL = "https://raw.githubusercontent.com/thecalvin/hk-mark-six-data/master/marksix.json"
-    
+    TARGET_URL = "https://www.lotto-8.com/listltohk.asp" 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
     }
@@ -17,26 +17,27 @@ def fetch_and_clean_data():
     try:
         response = requests.get(TARGET_URL, headers=headers, timeout=15)
         response.raise_for_status()
-        draws_data = response.json()
+        
+        response.encoding = 'utf-8' 
+        soup = BeautifulSoup(response.text, "html.parser")
         
         cleaned_draws = []
-        for draw in draws_data:
-            # 兼容不同的 JSON 欄位命名格式 (numbers 或 drawNo)
-            nums = draw.get("numbers") or draw.get("drawNo") or []
-            special = draw.get("special") or draw.get("xDrawNo")
-            
-            if len(nums) >= 6 and special is not None:
-                full_draw = [int(n) for n in nums[:6]] + [int(special)]
-                if all(MIN_NUM <= n <= MAX_NUM for n in full_draw):
-                    cleaned_draws.append(full_draw)
-                    
+        rows = soup.find_all("tr")
+        for row in rows:
+            text_content = row.get_text(separator=" ", strip=True)
+            numbers = re.findall(r'\b([0-9]{1,2})\b', text_content)
+            valid_nums = [int(n) for n in numbers if MIN_NUM <= int(n) <= MAX_NUM]
+            unique_nums = list(dict.fromkeys(valid_nums))
+            if len(unique_nums) == 7:
+                cleaned_draws.append(unique_nums)
+                
         if not cleaned_draws:
-            raise ValueError("無法從遠端 JSON 中解析出有效的開獎組合。")
+            raise ValueError("無法從 DOM 中解析出有效的 7 碼組合，網頁結構可能已大幅變更。")
             
-        return cleaned_draws
+        return cleaned_draws[::-1]
         
     except Exception as e:
-        print(f"❌ 數據擷取失敗: {e}")
+        print(f"❌ 網頁爬取與解析失敗: {e}")
         sys.exit(1)
 
 def generate_calibrated_ev_matrix(draws):
@@ -53,7 +54,7 @@ def generate_calibrated_ev_matrix(draws):
     return calibrated_probs
 
 def main():
-    print("🔄 開始同步歷史開獎數據...")
+    print("🔄 開始透過 lotto-8 爬取最新開獎數據...")
     draws = fetch_and_clean_data()
     print(f"✅ 成功獲取 {len(draws)} 期真實歷史數據！")
     
@@ -99,7 +100,7 @@ def main():
     with open("prediction_result.json", "w", encoding="utf-8") as f:
         json.dump(output_data, f, ensure_ascii=False, indent=2)
         
-    print("🎉 預測更新成功！數據已成功寫入 prediction_result.json")
+    print("🎉 預測更新成功！真實特徵已成功寫入 prediction_result.json")
 
 if __name__ == "__main__":
     main()
