@@ -60,21 +60,17 @@ async function loadAILottoDashboard() {
         const now = new Date();
         const diffHours = (now - updateDate) / (1000 * 60 * 60);
         
-        // 設定今日夜晚 21:30 的死線邊界 (馬會開獎時間)
         const todayDrawTime = new Date();
         todayDrawTime.setHours(21, 30, 0, 0);
 
         let alertBadge = "";
         
-        // 🔴 情境 1：硬性超時 (GitHub Action 炒咗 / 爬蟲 API 死咗)
         if (diffHours > 24) {
             alertBadge = `<br><span style="display: inline-block; margin-top: 5px; padding: 4px 8px; background-color: #fff5f5; color: #e53e3e; border: 1px solid #feb2b2; border-radius: 6px; font-weight: bold; font-size: 13px;">⚠️ 系統提示：目前顯示為 ${diffHours.toFixed(0)} 小時前之歷史數據</span>`;
             setTimeout(() => {
                 alert(`⚠️ 系統警告\n\n偵測到最新數據爬取失敗！\n目前大盤顯示為 ${diffHours.toFixed(0)} 小時前之歷史快取數據。`);
             }, 500);
-        } 
-        // 🟠 情境 2：開獎空窗期 (過咗 21:30，但 AI 仲未喺 22:15 自動更新)
-        else if (now >= todayDrawTime && updateDate < todayDrawTime) {
+        } else if (now >= todayDrawTime && updateDate < todayDrawTime) {
             alertBadge = `<br><span style="display: inline-block; margin-top: 5px; padding: 4px 8px; background-color: #fffaf0; color: #dd6b20; border: 1px solid #fbd38d; border-radius: 6px; font-weight: bold; font-size: 13px;">⏳ 數據更新中：等待 22:15 系統排程擷取最新結果</span>`;
             setTimeout(() => {
                 alert(`⏳ 更新空窗期提示\n\n馬會啱啱已經開獎！\nAI 系統排程將於 22:15 自動擷取最新結果，目前大盤仍為「上一期」數據。`);
@@ -84,6 +80,25 @@ async function loadAILottoDashboard() {
         if (metaElement) { 
             metaElement.innerHTML = `數據更新時間：${localTime} • ⚖️ 混合決策引擎：<b>📈 嚴格歸一化與 EV 最大化模式</b>${alertBadge}`; 
         } 
+
+        // 🔴 渲染最新一期官方開獎結果看板
+        const drawContainer = document.getElementById("latest-draw-balls");
+        const periodContainer = document.getElementById("latest-draw-period");
+        if (drawContainer && rawJsonData.latest_draw_result) {
+            const latest = rawJsonData.latest_draw_result;
+            periodContainer.innerText = `總訓練期數：第 ${rawJsonData.total_periods_trained} 期`;
+            
+            let ballsHtml = "";
+            latest.forEach((num, index) => {
+                const ballColor = getBallColorHex(num, false);
+                const formattedNum = String(num).padStart(2, '0');
+                if (index === 6) {
+                    ballsHtml += `<span style="margin: 0 4px; font-weight: bold; color: #718096; font-size: 16px;">+</span>`;
+                }
+                ballsHtml += `<div style="width: 34px; height: 34px; background: ${ballColor}; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.15);">${formattedNum}</div>`;
+            });
+            drawContainer.innerHTML = ballsHtml;
+        }
         
         let realWeights = {}; 
         for (let i = 1; i <= 49; i++) { 
@@ -171,7 +186,6 @@ function processWeightsAndRender(realWeights) {
     renderDashboardUI(); 
 } 
 
-// 🎯 解析真實 JSON 特徵 (取代偽造算術邏輯)
 function parseRealMetrics(numStr) {
     const num = String(numStr);
     const rolling = rawJsonData?.rolling_features?.[num] || {};
@@ -187,7 +201,6 @@ function parseRealMetrics(numStr) {
     };
 }
 
-// 🎯 組合層級統計驗證
 function validateCombinationStructure(selectedArray) {
     if (selectedArray.length < 6) return { isValid: false, reason: "號碼不足" };
     
@@ -195,9 +208,7 @@ function validateCombinationStructure(selectedArray) {
     const sum = nums.reduce((a, b) => a + b, 0);
     const oddCount = nums.filter(n => n % 2 !== 0).length;
     
-    // 六合彩 6 碼總和常態分佈：115 ~ 185
     const isSumValid = sum >= 115 && sum <= 185;
-    // 單雙比過濾：排除全單或全雙極端值
     const isOddEvenValid = oddCount > 0 && oddCount < nums.length;
 
     return {
@@ -220,7 +231,6 @@ function renderDashboardUI() {
     userBallsContainer.innerHTML = ""; 
     allBallsContainer.innerHTML = ""; 
 
-    // PART 1：AI 純大號碼主推列 
     aiBigTop7.forEach((num) => { 
         const ballColor = getBallColorHex(num, false); 
         const formattedNum = String(num).padStart(2, '0'); 
@@ -233,7 +243,6 @@ function renderDashboardUI() {
         ballsContainer.insertAdjacentHTML("beforeend", ballHTML); 
     }); 
 
-    // PART 1.5：AI 全體 1-49 海選黃金列 
     if (allLottoBallsContainer) { 
         aiAllTop7.forEach((num) => { 
             const ballColor = getBallColorHex(num, false); 
@@ -248,7 +257,6 @@ function renderDashboardUI() {
         }); 
     } 
 
-    // PART 2：User 專屬自選看板
     if (userSelected.length === 0) { 
         userBallsContainer.innerHTML = '<span id="user-hint" style="color: #a0aec0; font-size: 14px; font-weight: 500;">💡 未選號碼，請喺下面 PART 3 大盤點擊號碼球，即可在此處即時組裝你嘅心水防線！</span>'; 
         if (statsPanel) statsPanel.style.display = "none"; 
@@ -306,7 +314,6 @@ function renderDashboardUI() {
         displayArray.sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
     } 
 
-    // PART 3：渲染 49 碼全數字即時大盤 
     displayArray.forEach(([num, prob]) => { 
         const ballColor = getBallColorHex(num, false); 
         const formattedNum = String(num).padStart(2, '0'); 
@@ -332,11 +339,8 @@ function renderDashboardUI() {
         cardElement.style.background = isUserSelected ? "#ebf8ff" : "#fff";
         cardElement.style.transition = "all 0.2s";
 
-        // 🛰️ 【360度空間防撞牆】動態計算上下與左右邊界
         cardElement.addEventListener('mouseover', function() {
             const rect = cardElement.getBoundingClientRect();
-            
-            // 🛡️ 1. 【上下防撞偵測】若頂部視口距離小於 340px 則強制向下彈出
             if (rect.top < 340) {
                 cardElement.style.setProperty('--tooltip-top', '115%');
                 cardElement.style.setProperty('--tooltip-bottom', 'auto');
@@ -351,7 +355,6 @@ function renderDashboardUI() {
                 cardElement.style.setProperty('--arrow-color', 'rgba(20, 24, 33, 0.98) transparent transparent transparent');
             }
 
-            // 🛡️ 2. 【左右防撞偵測】
             const sideBuffer = 150;
             if (rect.left < sideBuffer) {
                 cardElement.style.setProperty('--tooltip-left', '0');
@@ -377,12 +380,11 @@ function renderDashboardUI() {
             }
         });
 
-        // 讀取真實特徵權重或給予預設值
         let evWeight = rawJsonData?.feature_importances?.ev_anti_collision_weight ? (rawJsonData.feature_importances.ev_anti_collision_weight * 100).toFixed(1) : "60.0";
         let macroFilter = rawJsonData?.feature_importances?.macro_distribution_filter ? (rawJsonData.feature_importances.macro_distribution_filter * 100).toFixed(1) : "40.0";
         
         cardElement.setAttribute('data-info',
-            `🔮 號碼 ${formattedNum} AI 真實特徵報告\n` +
+            `🔮 號碼 ${formattedNum} AI 真est特徵報告\n` +
             `------------------------------------\n` +
             `💰 模型分配機率：${metrics.probPercent}%\n` +
             `⏱️ 真實盲門期數：${metrics.missedPeriods} 期\n` +
