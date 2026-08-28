@@ -89,6 +89,7 @@ def main():
     output_data = {
         "last_updated": str(np.datetime64('now') + np.timedelta64(8, 'h')),
         "total_periods_trained": len(draws),
+        "latest_draw_result": draws[-1] if draws else [], # 👈 提取最新一期 7 個號碼供前台看板核對
         "number_probabilities": {str(i+1): round(float(probs[i]), 4) for i in range(MAX_NUM)},
         "rolling_features": rolling_output,
         "feature_importances": {
@@ -100,7 +101,7 @@ def main():
     with open("prediction_result.json", "w", encoding="utf-8") as f:
         json.dump(output_data, f, ensure_ascii=False, indent=2)
         
-    print("🎉 預測更新成功！真實特徵已成功寫入 prediction_result.json")
+    print("🎉 預測更新成功！真實特徵與最新開獎結果已成功寫入 prediction_result.json")
 
 if __name__ == "__main__":
     main()
