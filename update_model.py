@@ -53,14 +53,21 @@ def fetch_and_clean_data():
         sys.exit(1)  # 觸發 Exit Code 1，強制阻斷 GitHub Actions 部署，防止假數據覆蓋
 
 def generate_calibrated_ev_matrix(draws):
-    # 物理獨立事件基準機率 P0 = 7/49 = 0.142857
-    base_probs = np.full(MAX_NUM, 7.0 / MAX_NUM)
+    # 1. 根據爬取到的真實歷史開出次數計算基礎機率 (打破機率全部相同的僵局)
+    counts = np.zeros(MAX_NUM)
+    for d in draws:
+        for num in d:
+            if MIN_NUM <= num <= MAX_NUM:
+                counts[num - 1] += 1
+                
+    # Laplace 平滑處理 (避免歷史從未開出的號碼機率變 0)
+    raw_freq = (counts + 1) / (len(draws) + MAX_NUM)
     
-    # EV 策略加權：提高 32-49 號碼權重 (1.25x) 以避開生日號碼 (1-31) 撞號獎金稀釋
+    # 2. EV 策略加權：提高 32-49 號碼權重 (1.25x) 以避開生日號碼 (1-31) 撞號獎金稀釋
     ev_weights = np.where(np.arange(1, MAX_NUM + 1) > 31, 1.25, 0.8)
-    raw_ev_probs = base_probs * ev_weights
+    raw_ev_probs = raw_freq * ev_weights
     
-    # 嚴格歸一化約束：確保 49 個號碼加總機率嚴格等於 7.0
+    # 3. 嚴格歸一化約束：確保 49 個號碼加總機率嚴格等於 7.0
     calibrated_probs = (raw_ev_probs / raw_ev_probs.sum()) * 7.0
     return calibrated_probs
 
