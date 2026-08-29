@@ -9,37 +9,48 @@ MIN_NUM = 1
 MAX_NUM = 49
 
 def fetch_and_clean_data():
-    TARGET_URL = "https://www.lotto-8.com/listltohk.asp" 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
     }
     
-    try:
-        response = requests.get(TARGET_URL, headers=headers, timeout=15)
-        response.raise_for_status()
+    cleaned_draws = []
+    
+    # 🔄 自動翻頁爬取第 1 至 4 頁 (約 100 期真實數據)
+    for page in range(1, 5):
+        TARGET_URL = f"https://www.lotto-8.com/listltohk.asp?indexpage={page}&orderby=new"
         
-        response.encoding = 'utf-8' 
-        soup = BeautifulSoup(response.text, "html.parser")
-        
-        cleaned_draws = []
-        rows = soup.find_all("tr")
-        for row in rows:
-            text_content = row.get_text(separator=" ", strip=True)
-            numbers = re.findall(r'\b([0-9]{1,2})\b', text_content)
-            valid_nums = [int(n) for n in numbers if MIN_NUM <= int(n) <= MAX_NUM]
-            unique_nums = list(dict.fromkeys(valid_nums))
-            if len(unique_nums) == 7:
-                cleaned_draws.append(unique_nums)
-                
-        if not cleaned_draws:
-            raise ValueError("無法從 DOM 中解析出有效的 7 碼組合，網頁結構可能已大幅變更。")
+        try:
+            response = requests.get(TARGET_URL, headers=headers, timeout=15)
+            response.raise_for_status()
             
-        return cleaned_draws[::-1]
+            response.encoding = 'utf-8' 
+            soup = BeautifulSoup(response.text, "html.parser")
+            
+            rows = soup.find_all("tr")
+            page_draws = []
+            for row in rows:
+                text_content = row.get_text(separator=" ", strip=True)
+                numbers = re.findall(r'\b([0-9]{1,2})\b', text_content)
+                valid_nums = [int(n) for n in numbers if MIN_NUM <= int(n) <= MAX_NUM]
+                unique_nums = list(dict.fromkeys(valid_nums))
+                if len(unique_nums) == 7:
+                    page_draws.append(unique_nums)
+                    
+            if not page_draws:
+                print(f"⚠️ 第 {page} 頁無有效數據，可能已達尾頁。")
+                break
+                
+            cleaned_draws.extend(page_draws)
+            
+        except Exception as e:
+            print(f"❌ 第 {page} 頁爬取失敗: {e}")
+            sys.exit(1)
+            
+    if not cleaned_draws:
+        raise ValueError("無法從任何分頁解析出有效 7 碼組合，爬蟲徹底失敗。")
         
-    except Exception as e:
-        print(f"❌ 網頁爬取與解析失敗: {e}")
-        sys.exit(1)
-
+    # 因為 lotto-8 係新至舊排列，最尾必須反轉 (Reverse) 令其變成「舊至新」供陣列切片運算
+    return cleaned_draws[::-1]
 def generate_calibrated_ev_matrix(draws):
     counts = np.zeros(MAX_NUM)
     for d in draws:
